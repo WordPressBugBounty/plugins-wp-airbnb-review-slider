@@ -15,7 +15,7 @@
  * Plugin Name: 	  WP Airbnb Review Slider
  * Plugin URI:        https://wpreviewslider.com/
  * Description:       Allows you to easily display your Airbnb Business Page reviews in your Posts, Pages, and Widget areas.
- * Version:           3.9
+ * Version:           4.0
  * Author:            LJ Apps
  * Author URI:        http://ljapps.com/
  * License:           GPL-2.0+
@@ -85,7 +85,7 @@ function wpairbnb_do_this_daily() {
 
 		
 	require_once plugin_dir_path( __FILE__ ) . 'admin/class-wp-airbnb-review-slider-admin.php';
-	$plugin_admin = new WP_Airbnb_Review_Admin( 'wp-airbnb-review-slider', '3.9' );
+	$plugin_admin = new WP_Airbnb_Review_Admin( 'wp-airbnb-review-slider', '4.0' );
 	$plugin_admin->wpairbnb_download_airbnb_master();
 	
 }
