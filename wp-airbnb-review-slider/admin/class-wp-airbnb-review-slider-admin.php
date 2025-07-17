@@ -1025,7 +1025,265 @@ private $errormsg;
 	 * @since   1.0.0
 	 * @return  void
 	 */	
-	public function wpairbnb_download_airbnb_master() {
+	 
+	 //---7/16/2025 going to use our crawling server now.
+	//Airbnb
+	public function wpairbnb_download_airbnb_master(){
+		$result['ack']='success';
+	
+		$errormsg='';
+		$reviewsarraytemp = Array();
+		$nhful='new';
+		$reviewsarray= Array();
+		$crawlerreviewsarray= Array();
+		
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'wpairbnb_reviews';
+		$options = get_option('wpairbnb_airbnb_settings');
+		$listedurl = trim($options['airbnb_business_url']);
+		//make sure you have valid url, if not display message
+
+		//echo "passed both tests";
+		$stripvariableurl = strtok($listedurl, '?');
+		//find the listing_id
+		$listing_id = (int) filter_var($stripvariableurl, FILTER_SANITIZE_NUMBER_INT);
+		
+		if (filter_var($listedurl, FILTER_VALIDATE_URL) && $options['airbnb_radio']=='yes') {
+				
+			if(isset($_SERVER['SERVER_ADDR']) && $_SERVER['SERVER_ADDR']!=''){
+				$ip_server = $_SERVER['SERVER_ADDR'];
+			} else {
+				//get url of site.
+				$ip_server = urlencode(get_site_url());
+			}
+			$siteurl = urlencode(get_site_url());
+			$pagenum = 1;
+			
+			//scrapeurl
+			$sitetypelower = "airbnb";
+			$nextpageurl = '';
+			$blockstoinsert='20';
+			
+			$tempurlval = 'https://crawl.ljapps.com/crawlrevs?rip='.$ip_server.'&surl='.$siteurl.'&scrapeurl='.$listedurl.'&stype='.$sitetypelower.'&sfp=pro&nobot=1&nhful='.$nhful.'&locationtype=&scrapequery=&tempbusinessname=&pagenum='.$pagenum.'&nextpageurl='.$nextpageurl.'&blocks='.$blockstoinsert;
+			
+			//echo $tempurlval;
+			//die();
+			
+			$serverresponse='';
+			
+			$args = array(
+				'timeout'     => 120,
+				'sslverify' => false,
+				'headers' => array( 
+					'Content-Type' => ' application/json',
+					'Accept'=> 'application/json'
+				)
+			); 
+			$response = wp_remote_get( $tempurlval, $args );
+			if ( is_array( $response ) && ! is_wp_error( $response ) ) {
+				$headers = $response['headers']; // array of http header lines
+				$serverresponse    = $response['body']; // use the content
+			} else {
+				//must have been an error
+				$results['ack'] ='error';
+				$results['ackmsg'] ='Error 0001a: trouble contacting crawling server with remote_get. Please try again or contact support.'.$response->get_error_message();
+				$results = json_encode($results);
+				echo $results;
+				die();
+			}
+			
+			//print_r($serverresponse);
+			
+		//check for block or timeout
+		//====================
+		if (strpos($serverresponse, "Please wait while your request is being verified") !== false || !isset($serverresponse) || $serverresponse=='' || strpos($serverresponse, "Access denied by Imunify360 bot-protection.") !== false || strpos($serverresponse, "403 Forbidden") !== false) {
+		   //this site is greylisted by imunify360 on cloudways, call backup digital ocean server
+		   $response = wp_remote_get( 'https://ocean.ljapps.com/crawlrevs.php?rip='.$ip_server.'&surl='.$siteurl.'&scrapeurl='.$listedurl.'&stype='.$sitetypelower.'&sfp=pro&nobot=1&nhful='.$nhful.'&locationtype=&scrapequery=&tempbusinessname=&pagenum='.$pagenum.'&nextpageurl='.$nextpageurl, array( 'sslverify' => false, 'timeout' => 60 ) );
+			if ( is_array( $response ) && ! is_wp_error( $response ) ) {
+				$headers = $response['headers']; // array of http header lines
+				$serverresponse    = $response['body']; // use the content
+			}
+		}
+		//=========================	
+			$serverresponsearray = json_decode($serverresponse, true);
+			
+			//print_r($serverresponsearray );
+			//die();
+
+			if($serverresponse=='' || !is_array($serverresponsearray)){
+				$results['ack'] ='error';
+				$results['ackmsg'] ='Error 0001: trouble contacting crawling server. Please try again or contact support.';
+				$results = json_encode($results);
+				echo $results;
+				die();
+			}
+			//catch limit error
+			if($serverresponsearray['ack']=='error'){
+				$results['ack'] ='error';
+				$results['ackmsg'] ='Error 0002: '.$serverresponsearray['ackmessage'];
+				$results = json_encode($results);
+				echo $results;
+				die();
+			}
+			if(!isset($serverresponsearray['result']) || !is_array($serverresponsearray['result'])){
+				$results['ack'] ='error';
+				$results['ackmsg'] ='Error 0002b: trouble finding reviews. Contact support with this error code and the search terms or place id you are using.';
+				$results = json_encode($results);
+				echo $results;
+				die();
+			}
+			//catch error
+			if($serverresponsearray['result']['ack']=='error'){
+				$results['ack'] ='error';
+				$results['ackmsg'] ='Error 0003: '.$serverresponsearray['ackmessage'].' : '.$serverresponsearray['result']['ackmsg'];
+				$results = json_encode($results);
+				echo $results;
+				die();
+			}
+			//made it this far assume we have reviews.
+			$crawlerresultarray = $serverresponsearray['result'];
+			
+			//print_r($crawlerresultarray);
+			//die();
+
+			//need totals and avg for this place $getreviewsarray['total']
+			$result['total']='';
+			$result['avg']='';
+			if(isset($crawlerresultarray['avg'])){
+				$result['avg']=$crawlerresultarray['avg'];
+			}
+			if(isset($crawlerresultarray['total'])){
+				$result['total']=$crawlerresultarray['total'];
+			}
+			
+			//pass back URL used
+			if(isset($crawlerresultarray['callurl'])){
+				$result['callurl']=$crawlerresultarray['callurl'];
+			}
+			//pass back next URL used
+			if(isset($crawlerresultarray['nextpageurl'])){
+				$result['nextpageurl']=$crawlerresultarray['nextpageurl'];
+			}
+			
+			$x=0;
+			if(isset($crawlerresultarray['reviews'])){
+			$crawlerreviewsarray = $crawlerresultarray['reviews'];
+			}
+			
+			foreach ($crawlerreviewsarray as $review) {
+				
+				$tempownerres='';
+				if(isset($review['owner_response']) && $review['owner_response']!=''){
+					$tempownerres = $review['owner_response'];
+				}
+				$templocation ='';
+				if(isset($review['location']) && $review['location']!=''){
+					$templocation = $review['location'];
+				}	
+				$tempmediaurlsarrayjson ='';
+				if(isset($review['mediaurlsarrayjson']) && $review['mediaurlsarrayjson']!=''){
+					$tempmediaurlsarrayjson = $review['mediaurlsarrayjson'];
+				}
+				
+				$tempimg = "";	
+				if($review['userimage']!=""){
+					$tempimg = $review['userimage'];
+				}
+				
+				$fromurl = "";	
+				if($review['from_url_review']!=""){
+					$fromurl = $review['from_url_review'];
+				}
+				
+								$review_length = str_word_count($review['review_text']);
+								$timestamp = $this->myStrtotime($review['date']);
+								$unixtimestamp = $timestamp;
+								$timestamp = date("Y-m-d H:i:s", $timestamp);
+								//check option to see if this one has been hidden
+								//pull array from options table of airbnb hidden
+								$airbnbhidden = get_option( 'wpairbnb_hidden_reviews' );
+								if(!$airbnbhidden){
+									$airbnbhiddenarray = array('');
+								} else {
+									$airbnbhiddenarray = json_decode($airbnbhidden,true);
+								}
+								$this_airbnb_val = trim($review['reviewer_name'])."-".strtotime($timestamp)."-".$review_length."-Airbnb-".$review['rating'];
+								if (in_array($this_airbnb_val, $airbnbhiddenarray)){
+									$hideme = 'yes';
+								} else {
+									$hideme = 'no';
+								}
+								
+				
+				$reviewindb = 'no';
+								$timestamp = $this->myStrtotime($review['date']);
+								$unixtimestamp = $timestamp;
+								$timestamp = date("Y-m-d H:i:s", $timestamp);
+								
+				$checkrow = $wpdb->get_var( "SELECT id FROM ".$table_name." WHERE created_time_stamp = '".$unixtimestamp."' AND reviewer_name = '".trim($review['reviewer_name'])."' " );
+				if( empty( $checkrow ) ){
+						$reviewindb = 'no';
+				} else {
+						$reviewindb = 'yes';
+				}
+				if( $reviewindb == 'no' )
+				{
+					
+				$reviewsarray[] = [
+				 'reviewer_name' => trim($review['reviewer_name']),
+				 'pagename' => "",
+				 'userpic' => $tempimg,
+				 'rating' => $review['rating'],
+				'created_time' => $timestamp,
+				'created_time_stamp' => $unixtimestamp,
+				 'review_text' => $review['review_text'],
+				 'hide' => "",
+				 'review_length' => $review_length,
+				'type' => 'Airbnb'
+				 ];
+								
+				}
+				
+				$x++;
+			}
+
+			//just crawling once for zillow and airbnb
+			if($sitetypelower=="airbnb" ){
+				$result['stoploop']='stop';
+			}
+
+		$result['reviews'] = $reviewsarray;
+		}
+
+	
+				//add all new airbnb reviews to db
+				$insertnum=0;
+				foreach ( $reviewsarray as $stat ){
+					$insertnum = $wpdb->insert( $table_name, $stat );
+				}
+				//reviews added to db
+				if($insertnum>0){
+					$errormsg = $errormsg . ' Airbnb reviews downloaded. They should now be on the Review List. Use the Template tab to display them on your site.';
+					$this->errormsg = $errormsg;
+				} else {
+					$errormsg = $errormsg . ' Unable to find any new reviews.';
+					$this->errormsg = $errormsg;
+				}
+			
+
+		
+		if($errormsg !=''){
+			//echo $errormsg;
+		}
+		
+		//return $result;
+
+	}
+	 
+	 
+	 
+	public function wpairbnb_download_airbnb_master_old() {
 		//make sure file get contents is turned on for this host
 		$errormsg ='';
 					
