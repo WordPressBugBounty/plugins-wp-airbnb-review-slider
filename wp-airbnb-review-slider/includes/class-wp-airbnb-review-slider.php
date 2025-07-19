@@ -69,7 +69,7 @@ class WP_Airbnb_Review {
 	public function __construct() {
 
 		$this->_token = 'wp-airbnb-review-slider';
-		$this->version = '4.1';
+		$this->version = '4.2';
 		//using this for development
 		//$this->version = time();
 

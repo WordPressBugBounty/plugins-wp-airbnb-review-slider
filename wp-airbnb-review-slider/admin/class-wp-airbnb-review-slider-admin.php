@@ -297,7 +297,7 @@ private $errormsg;
 	public function wpairbnb_airbnb_section_developers_cb($args)
 	{
 		//echos out at top of section
-		echo "<p>Use this page to download your newest Airbnb business reviews. Any new reviews you get are downloaded once a day. </p><p><b>The Pro version will allow you to download all your reviews from all your listings.</b></p>";
+		echo "<p>Use this page to download your newest Airbnb business reviews.</p><p><b>The Pro version will allow you to download all your reviews from all your listings and will keep them updated automatically.</b></b></p>";
 	}
 	
 	//==== field cb =====
