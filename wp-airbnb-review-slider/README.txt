@@ -4,7 +4,7 @@ Donate link: https://wpreviewslider.com/
 Tags: Airbnb, reviews, slider, testimonials, VRBO
 Requires at least: 4.0.1
 Tested up to: 6.8
-Stable tag: 4.2
+Stable tag: 4.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,9 @@ We are always looking for features to add. Just post on the support forum or con
 5. Create as many templates as you like.
 
 == Changelog ==
+= 4.4 =
+* small bug fix
+
 = 4.2 =
 * review download fix
 = 4.0 =

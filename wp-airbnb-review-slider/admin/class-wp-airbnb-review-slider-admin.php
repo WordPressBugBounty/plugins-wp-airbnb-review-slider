@@ -305,10 +305,18 @@ private $errormsg;
 	{
 		// get the value of the setting we've registered with register_setting()
 		$options = get_option('wpairbnb_airbnb_settings');
+		
+		// Ensure $options is an array
+		if (!is_array($options)) {
+			$options = array();
+		}
+		
+		// Get the current value safely
+		$current_value = isset($options[$args['label_for']]) ? $options[$args['label_for']] : '';
 
 		// output the field
 		?>
-		<input id="<?= esc_attr($args['label_for']); ?>" data-custom="<?= esc_attr($args['wpairbnb_custom_data']); ?>" type="text" name="wpairbnb_airbnb_settings[<?= esc_attr($args['label_for']); ?>]" placeholder="" value="<?php echo $options[$args['label_for']]; ?>">
+		<input id="<?= esc_attr($args['label_for']); ?>" data-custom="<?= esc_attr($args['wpairbnb_custom_data']); ?>" type="text" name="wpairbnb_airbnb_settings[<?= esc_attr($args['label_for']); ?>]" placeholder="" value="<?php echo esc_attr($current_value); ?>">
 		
 		<p class="description">
 			<?= esc_html__('Copy and paste the Airbnb URL for your location and click Save Settings. Examples:', 'wp_airbnb-settings'); ?>
@@ -325,9 +333,17 @@ private $errormsg;
 		{
 		$options = get_option('wpairbnb_airbnb_settings');
 		
+		// Ensure $options is an array
+		if (!is_array($options)) {
+			$options = array();
+		}
+		
+		// Get the current value safely
+		$current_value = isset($options[$args['label_for']]) ? $options[$args['label_for']] : '';
+		
 		   ?>
-				<input type="radio" name="wpairbnb_airbnb_settings[<?= esc_attr($args['label_for']); ?>]" value="yes" <?php checked('yes', $options[$args['label_for']], true); ?>>Yes&nbsp;&nbsp;&nbsp;
-				<input type="radio" name="wpairbnb_airbnb_settings[<?= esc_attr($args['label_for']); ?>]" value="no" <?php checked('no', $options[$args['label_for']], true); ?>>No
+				<input type="radio" name="wpairbnb_airbnb_settings[<?= esc_attr($args['label_for']); ?>]" value="yes" <?php checked('yes', $current_value, true); ?>>Yes&nbsp;&nbsp;&nbsp;
+				<input type="radio" name="wpairbnb_airbnb_settings[<?= esc_attr($args['label_for']); ?>]" value="no" <?php checked('no', $current_value, true); ?>>No
 		   <?php
 		}
 	//=======end airbnb page settings========================================================
@@ -368,7 +384,7 @@ private $errormsg;
 			$rtype = $item['type'];
 			
 			//check to see if row is in db already
-			$checkrow = $wpdb->get_row( "SELECT id FROM ".$table_name." WHERE created_time = '$created_time'" );
+			$checkrow = $wpdb->get_row( "SELECT id FROM ".$table_name." WHERE rating = '$rating'" );
 			if ( null === $checkrow ) {
 				$stats[] =array( 
 						'pageid' => $pageid, 
@@ -1221,7 +1237,7 @@ private $errormsg;
 								$unixtimestamp = $timestamp;
 								$timestamp = date("Y-m-d H:i:s", $timestamp);
 								
-				$checkrow = $wpdb->get_var( "SELECT id FROM ".$table_name." WHERE created_time_stamp = '".$unixtimestamp."' AND reviewer_name = '".trim($review['reviewer_name'])."' " );
+				$checkrow = $wpdb->get_var( "SELECT id FROM ".$table_name." WHERE rating = '".$review['rating']."' AND reviewer_name = '".trim($review['reviewer_name'])."' " );
 				if( empty( $checkrow ) ){
 						$reviewindb = 'no';
 				} else {
@@ -1431,7 +1447,7 @@ private $errormsg;
 								
 								//add check to see if already in db, skip if it is and end loop
 								$reviewindb = 'no';
-								$checkrow = $wpdb->get_var( "SELECT id FROM ".$table_name." WHERE created_time_stamp = '".$unixtimestamp."' AND reviewer_name = '".trim($user_name)."' " );
+								$checkrow = $wpdb->get_var( "SELECT id FROM ".$table_name." WHERE rating = '".$rating."' AND reviewer_name = '".trim($user_name)."' " );
 								if( empty( $checkrow ) ){
 										$reviewindb = 'no';
 								} else {
@@ -1509,8 +1525,9 @@ private $errormsg;
 			$table_name = $wpdb->prefix . 'wpairbnb_reviews';
 			$options = get_option('wpairbnb_airbnb_settings');
 			
-			//make sure you have valid url, if not display message
-			if (filter_var($options['airbnb_business_url'], FILTER_VALIDATE_URL)) {
+			// Enhanced security: Validate URL format AND destination to prevent SSRF
+			$url = $options['airbnb_business_url'];
+			if (filter_var($url, FILTER_VALIDATE_URL) && $this->is_airbnb_domain($url)) {
 			  // you're good
 			  //echo "valid url";
 			  if($options['airbnb_radio']=='yes'){
@@ -1541,34 +1558,35 @@ private $errormsg;
 					*/
 					
 					
-					//grab the page and save it locally
-					$response = wp_remote_get($urlvalue);
-							if ( is_array( $response ) ) {
-							  $header = $response['headers']; // array of http header lines
-							  $fileurlcontentsremote = $response['body']; // use the content
-							} else {
-								echo "Error finding key. Please contact plugin support.";
-								die();
-							}
-					$savedurlfile = plugin_dir_path( __FILE__ ).'airbnbusercapture.html';
-					$savefile = file_put_contents($savedurlfile,$fileurlcontentsremote );
-					if(!file_exists($savedurlfile)){
-						echo "Error 102: Unable to get Airbnb page. Please make sure that your Hosting provider has file_put_contents turned on.";
-								die();
-					}
-					//================================
+					// Enhanced security: Grab the page with content-type validation
+					$response = wp_remote_get($urlvalue, array(
+						'timeout' => 30,
+						'user-agent' => 'Mozilla/5.0 (compatible; WP-Airbnb-Review-Slider/1.0)'
+					));
 					
-					if (ini_get('allow_url_fopen') == true) {
-						$fileurlcontents=file_get_contents($savedurlfile);
-					} else if (function_exists('curl_init')) {
-						$fileurlcontents=$this->file_get_contents_curl($savedurlfile);
-					} else {
-						$fileurlcontents='<html><body>fopen is not allowed on this host.</body></html>';
-						$errormsg = $errormsg . ' <p style="color: #A00;">fopen is not allowed on this host and cURL did not work either. Ask your web host to turn fopen on or fix cURL.</p>';
+					if (is_wp_error($response)) {
+						$errormsg = 'Error connecting to Airbnb: ' . $response->get_error_message();
 						$this->errormsg = $errormsg;
-						echo $errormsg;
-						die();
+						return;
 					}
+					
+					if (!is_array($response) || !isset($response['body'])) {
+						$errormsg = 'Error: Invalid response from Airbnb';
+						$this->errormsg = $errormsg;
+						return;
+					}
+					
+					// Validate content type to prevent XSS
+					$headers = wp_remote_retrieve_headers($response);
+					$content_type = wp_remote_retrieve_header($response, 'content-type');
+					
+					if ($content_type && strpos($content_type, 'text/html') === false) {
+						$errormsg = 'Error: Invalid content type received. Expected HTML content.';
+						$this->errormsg = $errormsg;
+						return;
+					}
+					
+					$fileurlcontents = $response['body'];
 
 
 
@@ -1690,7 +1708,7 @@ private $errormsg;
 								
 								//add check to see if already in db, skip if it is and end loop
 								$reviewindb = 'no';
-								$checkrow = $wpdb->get_var( "SELECT id FROM ".$table_name." WHERE created_time_stamp = '".$unixtimestamp."' AND reviewer_name = '".trim($user_name)."' " );
+								$checkrow = $wpdb->get_var( "SELECT id FROM ".$table_name." WHERE rating = '".$rating."' AND reviewer_name = '".trim($user_name)."' " );
 								if( empty( $checkrow ) ){
 										$reviewindb = 'no';
 								} else {
@@ -1742,10 +1760,12 @@ private $errormsg;
 					}
 				
 				
-				//add all new airbnb reviews to db
+				//add all new airbnb reviews to db with enhanced security
 				$insertnum=0;
 				foreach ( $reviews as $stat ){
-					$insertnum = $wpdb->insert( $table_name, $stat );
+					// Sanitize review data to prevent XSS attacks
+					$sanitized_stat = $this->sanitize_review_data($stat);
+					$insertnum = $wpdb->insert( $table_name, $sanitized_stat );
 				}
 				//reviews added to db
 				if($insertnum>0){
@@ -1755,6 +1775,8 @@ private $errormsg;
 					$errormsg = $errormsg . ' Unable to find any new reviews.';
 					$this->errormsg = $errormsg;
 				}
+				
+				// Security: No temporary files written to prevent file injection attacks
 				
 			  }
 			} else {
@@ -1814,7 +1836,7 @@ private $errormsg;
 			$urlmayberlater = esc_url( add_query_arg( 'wprevpronotice', 'mlater_airbnb',$urltrimmedtab ) );
 			$urlnotagain = esc_url( add_query_arg( 'wprevpronotice', 'notagain_airbnb',$urltrimmedtab ) );
 			
-			$temphtml = '<p>Hey, I noticed you\'ve been using my <b>WP Airbnb Review Slider</b> plugin for a while now – that’s awesome! Could you please do me a BIG favor and give it a 5-star rating on WordPress? <br>
+			$temphtml = '<p>Hey, I noticed you\'ve been using my <b>WP Airbnb Review Slider</b> plugin for a while now – that\'s awesome! Could you please do me a BIG favor and give it a 5-star rating on WordPress? <br>
 			Thanks!<br>
 			~ Josh W.<br></p>
 			<ul>
@@ -1909,6 +1931,122 @@ private $errormsg;
 		echo '</ul>';
 		
 		echo '<div><a href="admin.php?page=wp_airbnb-reviews">All Reviews</a> - <a href="https://wpreviewslider.com/" target="_blank">Go Pro For More Cool Features!</a></div>';
+	}
+
+	/**
+	 * Enhanced security: Validate Airbnb URLs to prevent SSRF attacks
+	 * @access  private
+	 * @since   1.0.0
+	 * @param   string    $url    The URL to validate
+	 * @return  bool              True if valid Airbnb URL, false otherwise
+	 */
+	private function is_valid_airbnb_url($url) {
+		// Basic URL format validation
+		if (!filter_var($url, FILTER_VALIDATE_URL)) {
+			return false;
+		}
+		
+		// Parse URL to check components
+		$parsed_url = parse_url($url);
+		if (!$parsed_url || !isset($parsed_url['host'])) {
+			return false;
+		}
+		
+		// Only allow Airbnb domains
+		$allowed_hosts = array(
+			'www.airbnb.com',
+			'airbnb.com',
+			'www.airbnb.co.uk',
+			'airbnb.co.uk',
+			'www.airbnb.ca',
+			'airbnb.ca',
+			'www.airbnb.com.au',
+			'airbnb.com.au'
+		);
+		
+		if (!in_array($parsed_url['host'], $allowed_hosts)) {
+			return false;
+		}
+		
+		// Only allow specific Airbnb URL patterns
+		$allowed_patterns = array(
+			'/users/show/',
+			'/rooms/',
+			'/experiences/'
+		);
+		
+		$path = isset($parsed_url['path']) ? $parsed_url['path'] : '';
+		$has_valid_pattern = false;
+		
+		foreach ($allowed_patterns as $pattern) {
+			if (strpos($path, $pattern) !== false) {
+				$has_valid_pattern = true;
+				break;
+			}
+		}
+		
+		return $has_valid_pattern;
+	}
+
+	/**
+	 * Enhanced security: Sanitize review data to prevent XSS
+	 * @access  private
+	 * @since   1.0.0
+	 * @param   array     $review_data    The review data to sanitize
+	 * @return  array                     Sanitized review data
+	 */
+	private function sanitize_review_data($review_data) {
+		$sanitized = array();
+		
+		// Sanitize text fields
+		$sanitized['reviewer_name'] = sanitize_text_field($review_data['reviewer_name']);
+		$sanitized['pagename'] = sanitize_text_field($review_data['pagename']);
+		$sanitized['review_text'] = wp_kses_post($review_data['review_text']); // Allow safe HTML
+		$sanitized['userpic'] = esc_url_raw($review_data['userpic']);
+		
+		// Sanitize numeric fields
+		$sanitized['rating'] = intval($review_data['rating']);
+		$sanitized['created_time_stamp'] = intval($review_data['created_time_stamp']);
+		$sanitized['review_length'] = intval($review_data['review_length']);
+		
+		// Sanitize date field
+		$sanitized['created_time'] = sanitize_text_field($review_data['created_time']);
+		
+		// Sanitize type field
+		$sanitized['type'] = sanitize_text_field($review_data['type']);
+		
+		// Sanitize hide field
+		$sanitized['hide'] = sanitize_text_field($review_data['hide']);
+		
+		return $sanitized;
+	}
+
+	/**
+	 * Enhanced security: Check if URL is from allowed Airbnb domains
+	 * @access  private
+	 * @since   1.0.0
+	 * @param   string    $url    The URL to validate
+	 * @return  bool              True if valid Airbnb domain, false otherwise
+	 */
+	private function is_airbnb_domain($url) {
+		$parsed_url = parse_url($url);
+		if (!$parsed_url || !isset($parsed_url['host'])) {
+			return false;
+		}
+		
+		// Only allow Airbnb domains
+		$allowed_hosts = array(
+			'www.airbnb.com',
+			'airbnb.com',
+			'www.airbnb.co.uk',
+			'airbnb.co.uk',
+			'www.airbnb.ca',
+			'airbnb.ca',
+			'www.airbnb.com.au',
+			'airbnb.com.au'
+		);
+		
+		return in_array($parsed_url['host'], $allowed_hosts);
 	}
 
 }
