@@ -39,7 +39,7 @@ class WP_Airbnb_Review_Admin {
 	 * @var      string    $version    The current version of this plugin.
 	 */
 	private $version;
-private $errormsg;
+	public $errormsg;
 	/**
 	 * Initialize the class and set its properties.
 	 *
@@ -50,10 +50,7 @@ private $errormsg;
 	public function __construct( $plugintoken, $version ) {
 
 		$this->_token = $plugintoken;
-		//$this->version = $version;
-		//for testing==============
-		$this->version = time();
-		//===================
+		$this->version = $version;
 				
 
 	}
@@ -79,12 +76,16 @@ private $errormsg;
 		//only load for this plugin wp_airbnb-settings-pricing
 		if(isset($_GET['page'])){
 			if($_GET['page']=="wp_airbnb-reviews" || $_GET['page']=="wp_airbnb-templates_posts" || $_GET['page']=="wp_airbnb-get_airbnb" || $_GET['page']=="wp_airbnb-get_pro" || $_GET['page']=="wp_airbnb-welcome"){
+
+			wp_register_style( 'Font_Awesome', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css' );
+			wp_enqueue_style('Font_Awesome');
+
+			wp_enqueue_style( $this->_token."_wprev_w3", plugin_dir_url( __FILE__ ) . 'css/wprev_w3.css', array(), $this->version, 'all' );
+
 			wp_enqueue_style( $this->_token, plugin_dir_url( __FILE__ ) . 'css/wpairbnb_admin.css', array(), $this->version, 'all' );
 			wp_enqueue_style( $this->_token."_wpairbnb_w3", plugin_dir_url( __FILE__ ) . 'css/wpairbnb_w3.css', array(), $this->version, 'all' );
 			}
-			//load template styles for wp_airbnb-templates_posts page
-			if($_GET['page']=="wp_airbnb-templates_posts"|| $_GET['page']=="wp_airbnb-get_pro"){
-				//enque template styles for preview
+			if($_GET['page']=="wp_airbnb-templates_posts" || $_GET['page']=="wp_airbnb-get_pro" || $_GET['page']=="wp_airbnb-welcome"){
 				wp_enqueue_style( $this->_token."_style1", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprev-public_template1.css', array(), $this->version, 'all' );
 			}
 		}
@@ -217,11 +218,11 @@ private $errormsg;
 	public function wprev_airbnb_add_external_link_admin_submenu() {
 		global $submenu;
 
-		$menu_slug = 'wp_airbnb-reviews'; // used as "key" in menus
-		$menu_pos = 1; // whatever position you want your menu to appear
+		$menu_slug = 'wp_airbnb-welcome';
 
-		// add the external links to the slug you used when adding the top level menu
-		$submenu[$menu_slug][] = array('<div id="wprev-66023">Go Pro!</div>', 'manage_options', 'https://wpreviewslider.com/');
+		if ( array_key_exists( $menu_slug, $submenu ) ) {
+			$submenu[ $menu_slug ][] = array( '<div id="wprev-66023">Go Pro!</div>', 'manage_options', 'https://wpreviewslider.com/' );
+		}
 	}
 	public function wpse_66023_add_jquery() 
 	{

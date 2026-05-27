@@ -3,59 +3,62 @@
 /**
  * Provide a admin area view for the plugin
  *
- * This file is used to markup the admin-facing aspects of the plugin.
- *
- * @link       http://example.com
- * @since      1.0.0
- *
  * @package    WP_Airbnb_Review
  * @subpackage WP_Airbnb_Review/admin/partials
  */
- 
-     // check user capabilities
-    if (!current_user_can('manage_options')) {
-        return;
-    }
-	
-	    // wordpress will add the "settings-updated" $_GET parameter to the url
-		//https://freegolftracker.com/blog/wp-admin/admin.php?settings-updated=true&page=wp_airbnb-reviews
-    if (isset($_GET['settings-updated'])) {
-        // add settings saved message with the class of "updated"
-        add_settings_error('airbnb-radio', 'wpairbnb_message', __('Settings Saved', 'wp-airbnb-review-slider'), 'updated');
-    }
 
-	if(isset($this->errormsg)){
-		add_settings_error('airbnb-radio', 'wpairbnb_message', __($this->errormsg, 'wp-airbnb-review-slider'), 'error');
-	}
-?>
-<div class="wrap wp_airbnb-settings" id="">
-	<h1><img src="<?php echo plugin_dir_url( __FILE__ ) . 'logo.png'; ?>"></h1>
-<?php 
-include("tabmenu.php");
-?>
-<div class="wpairbnb_margin10">
+if ( ! current_user_can( 'manage_options' ) ) {
+	return;
+}
 
-	<form action="options.php" method="post">
-		<?php
-		// output security fields for the registered setting "wp_airbnb-get_airbnb"
-		settings_fields('wp_airbnb-get_airbnb');
-		// output setting sections and their fields
-		// (sections are registered for "wp_airbnb-get_airbnb", each field is registered to a specific section)
-		do_settings_sections('wp_airbnb-get_airbnb');
-		// output save settings button
-		submit_button('Save Settings & Download');
-		?>
-		<p><i>Note: It may take a little time after you hit the Save button to download your reviews.</i></p>
-	</form>
-	<?php 
-// show error/update messages
-		settings_errors('airbnb-radio');
+if ( isset( $_GET['settings-updated'] ) ) {
+	add_settings_error( 'airbnb-radio', 'wpairbnb_message', __( 'Settings Saved', 'wp-airbnb-review-slider' ), 'updated' );
+}
 
+if ( isset( $this->errormsg ) ) {
+	add_settings_error( 'airbnb-radio', 'wpairbnb_message', esc_html( $this->errormsg ), 'error' );
+}
 ?>
 
-</div>
+<div class="">
+<h1></h1>
+<div class="wrap" id="wp_rev_maindiv">
 
-</div>
+<img class="wprev_headerimg" src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . 'logo.png?v=' . $this->version ); ?>">
+<?php
+include 'tabmenu.php';
+?>
+	<div class="wpfbr_margin10">
+		<div class="w3-col welcomediv w3-container w3-white w3-border w3-border-light-gray2 w3-round-small">
 
-	
+			<form action="options.php" method="post">
+				<?php
+				settings_fields( 'wp_airbnb-get_airbnb' );
+				do_settings_sections( 'wp_airbnb-get_airbnb' );
+				submit_button( __( 'Save Settings & Download', 'wp-airbnb-review-slider' ) );
+				?>
+				<p><i><?php _e( 'Note: It may take a little time after you hit the Save button to download your reviews.', 'wp-airbnb-review-slider' ); ?></i></p>
+				<p><b><?php _e( 'The Pro version can download all your reviews with avatars from multiple Airbnb listings and check for new reviews daily!', 'wp-airbnb-review-slider' ); ?></b></p>
+			</form>
+			<?php
+			settings_errors( 'airbnb-radio' );
+			?>
+
+		</div>
+	</div>
+	</div>
+	</div>
+
+	<div id="popup_info" class="popup-wrapper wpairbnb_hide">
+	  <div class="popup-content">
+		<div class="popup-title">
+		  <button type="button" class="popup-close">&times;</button>
+		  <h3 id="popup_titletext"></h3>
+		</div>
+		<div class="popup-body">
+		  <div id="popup_bobytext1"></div>
+		  <div id="popup_bobytext2"></div>
+		</div>
+	  </div>
+	</div>
 

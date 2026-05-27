@@ -23,17 +23,24 @@ $table_name = $wpdb->prefix . 'wpairbnb_reviews';
 $rowsperpage = 20;
 $nonce = wp_create_nonce( 'my-nonce' );
 ?>
-<div class="wrap wp_airbnb-settings">
-	<h1><img src="<?php echo plugin_dir_url( __FILE__ ) . 'logo.png'; ?>"></h1>
+<div class="">
+<h1></h1>
+<div class="wrap" id="wp_rev_maindiv">
+
+<img class="wprev_headerimg" src="<?php echo esc_url( plugin_dir_url( __FILE__ ) . 'logo.png?v=' . $this->version ); ?>">
 <?php 
 include("tabmenu.php");
-?>
+?>	
+<div class="wpfbr_margin10">
+<div class="w3-col welcomediv w3-container w3-white w3-border w3-border-light-gray2 w3-round-small">
+
+
 <div class="wpairbnb_margin10">
 	<a id="wpairbnb_helpicon" class="wpairbnb_btnicononly button dashicons-before dashicons-editor-help"></a>
 	<a id="wpairbnb_removeallbtn" data-sec="<?php echo esc_attr( $nonce ); ?>" class="button dashicons-before dashicons-no"><?php _e('Remove All Reviews', 'wp-airbnb-review-slider'); ?></a>
 <p>
 	<?php 
-_e('Search reviews, hide certain reviews, manually add reviews, save a CSV file of your reviews to your computer, and more features available in the <a href="?page=wp_airbnb-get_pro">Pro Version</a> of this plugin!', 'wp-airbnb-review-slider'); 
+_e('Search reviews, hide certain reviews, manually add reviews, save a CSV file of your reviews to your computer, and more features available in the <a href="https://wpreviewslider.com/" target="_blank">Pro Version</a> of this plugin!', 'wp-airbnb-review-slider'); 
 ?>
 </p>
 </div>
@@ -194,6 +201,10 @@ _e('Search reviews, hide certain reviews, manually add reviews, save a CSV file 
  
  echo $html;
 ?>
+</div></div></div>
+
+
+
 	<div id="popup_review_list" class="popup-wrapper wpairbnb_hide">
 	  <div class="popup-content">
 		<div class="popup-title">
