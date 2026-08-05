@@ -8,14 +8,14 @@
  * @link       http://example.com
  * @since      1.0.0
  *
- * @package    WP_FB_Reviews
- * @subpackage WP_FB_Reviews/admin/partials
+ * @package    WP_Airbnb_Review
+ * @subpackage WP_Airbnb_Review/admin/partials
  */
- 
-     // check user capabilities
-    if (!current_user_can('manage_options')) {
-        return;
-    }
+
+    // check user capabilities
+   if (!current_user_can('manage_options')) {
+       return;
+   }
 	$html="";
 //db function variables
 global $wpdb;
@@ -40,10 +40,50 @@ include("tabmenu.php");
 	<a id="wpairbnb_removeallbtn" data-sec="<?php echo esc_attr( $nonce ); ?>" class="button dashicons-before dashicons-no"><?php _e('Remove All Reviews', 'wp-airbnb-review-slider'); ?></a>
 <p>
 	<?php 
-_e('Search reviews, hide certain reviews, manually add reviews, save a CSV file of your reviews to your computer, and more features available in the <a href="https://wpreviewslider.com/" target="_blank">Pro Version</a> of this plugin!', 'wp-airbnb-review-slider'); 
+_e('Click the eye icon to hide or show a review, the pencil to edit the reviewer avatar and date, or the trash icon to delete. Search reviews, manually add reviews, save a CSV file of your reviews to your computer, and more features available in the <a href="https://wpreviewslider.com/" target="_blank">Pro Version</a> of this plugin!', 'wp-airbnb-review-slider'); 
 ?>
 </p>
 </div>
+
+<div id="wpairbnb_new_review">
+<table class="form-table">
+	<tbody>
+		<tr class="wpairbnb_row">
+			<th scope="row"><?php esc_html_e( 'Reviewer Name:', 'wp-airbnb-review-slider' ); ?></th>
+			<td><input id="wpairbnb_nr_name" type="text" name="wpairbnb_nr_name" value="" readonly class="regular-text"></td>
+		</tr>
+		<tr class="wpairbnb_row">
+			<th scope="row"><?php esc_html_e( 'Rating:', 'wp-airbnb-review-slider' ); ?></th>
+			<td><input id="wpairbnb_nr_rating" type="text" name="wpairbnb_nr_rating" value="" readonly class="regular-text"></td>
+		</tr>
+		<tr class="wpairbnb_row">
+			<th scope="row"><?php esc_html_e( 'Review Text:', 'wp-airbnb-review-slider' ); ?></th>
+			<td><textarea id="wpairbnb_nr_text" name="wpairbnb_nr_text" cols="50" rows="4" readonly></textarea></td>
+		</tr>
+		<tr class="wpairbnb_row">
+			<th scope="row"><?php esc_html_e( 'Reviewer Avatar URL:', 'wp-airbnb-review-slider' ); ?></th>
+			<td>
+				<input id="wpairbnb_nr_avatar_url" type="text" name="wpairbnb_nr_avatar_url" value="" class="regular-text">
+				<a id="upload_avatar_button" class="button"><?php esc_html_e( 'Upload', 'wp-airbnb-review-slider' ); ?></a>
+				<br><p class="description"><?php esc_html_e( 'Avatar for the person who wrote the review.', 'wp-airbnb-review-slider' ); ?></p>
+				<img class="" height="60px" id="avatar_preview" src="" alt="">
+			</td>
+		</tr>
+		<tr class="wpairbnb_row">
+			<th scope="row"><?php esc_html_e( 'Review Date:', 'wp-airbnb-review-slider' ); ?></th>
+			<td>
+				<input id="wpairbnb_nr_date" type="text" name="wpairbnb_nr_date" class="regular-text" value="">
+				<p class="description"><?php esc_html_e( 'Format: YYYY-MM-DD HH:MM:SS.', 'wp-airbnb-review-slider' ); ?></p>
+			</td>
+		</tr>
+	</tbody>
+</table>
+<div id="wpairbnb_save_review_msg"></div>
+<input type="hidden" name="editrid" id="editrid" value="">
+<a id="wpairbnb_submitreviewbtn" class="button button-primary"><?php esc_html_e( 'Save Review', 'wp-airbnb-review-slider' ); ?></a>
+<a id="wpairbnb_addnewreview_cancel" class="button button-secondary"><?php esc_html_e( 'Cancel', 'wp-airbnb-review-slider' ); ?></a>
+</div>
+
 <?php 
 
 	//remove all, first make sure they want to remove all
@@ -121,6 +161,7 @@ _e('Search reviews, hide certain reviews, manually add reviews, save a CSV file 
 		<table class="wp-list-table widefat striped posts">
 			<thead>
 				<tr>
+					<th scope="col" width="70px" class="manage-column">'.__('Actions', 'wp-airbnb-review-slider').'</th>
 					<th scope="col" width="50px" class="manage-column">'.__('Pic', 'wp-airbnb-review-slider').'</th>
 					<th scope="col" style="min-width:70px" class="manage-column"><a href="'.esc_url( add_query_arg( 'sortby', 'reviewer_name',$currenturl ) ).$sortdirection.'"><i class="dashicons dashicons-sort '.$sorticoncolor[1].'" aria-hidden="true"></i> '.__('Name', 'wp-airbnb-review-slider').'</a></th>
 					<th scope="col" width="70px" class="manage-column"><a href="'.esc_url( add_query_arg( 'sortby', 'rating',$currenturl ) ).$sortdirection.'"><i class="dashicons dashicons-sort '.$sorticoncolor[2].'" aria-hidden="true"></i> '.__('Rating', 'wp-airbnb-review-slider').'</a></th>
@@ -150,32 +191,45 @@ _e('Search reviews, hide certain reviews, manually add reviews, save a CSV file 
 			foreach ( $reviewsrows as $reviewsrow ) 
 			{
 				if($reviewsrow->hide!="yes"){
-					$hideicon = '<i class="dashicons dashicons-visibility text_green" aria-hidden="true"></i>';
+					$hideicon = '<i title="'.esc_attr__('Shown - click to hide', 'wp-airbnb-review-slider').'" class="hiderevbtn dashicons dashicons-visibility text_green" aria-hidden="true"></i>';
+					$hiddentrclass = '';
 				} else {
-					$hideicon = '<i class="dashicons dashicons-hidden" aria-hidden="true"></i>';
+					$hideicon = '<i title="'.esc_attr__('Hidden - click to show', 'wp-airbnb-review-slider').'" class="hiderevbtn dashicons dashicons-hidden" aria-hidden="true"></i>';
+					$hiddentrclass = 'hiddenrow';
 				}
-				$hideicon ='';
-				
-				//user profile link
-				if( $reviewsrow->type=="Airbnb"){
-					$userpic = '<img style="-webkit-user-select: none;width: 50px;" src="'.$reviewsrow->userpic.'">';
-					$editdellink = '';
-				}else {
-					$userpic = '<img style="-webkit-user-select: none;width: 50px;" src="'.$reviewsrow->userpic.'">';
-					$editdellink = '<a title="Edit" href="'.$url_tempeditbtn.'"><span class="reveditbtn dashicons dashicons-edit"></span></a><span title="Delete" class="revdelbtn text_red dashicons dashicons-trash"></span>';
-					
+
+				$editdellink = '<span title="'.esc_attr__('Edit', 'wp-airbnb-review-slider').'" class="reveditbtn dashicons dashicons-edit"></span> <span title="'.esc_attr__('Delete', 'wp-airbnb-review-slider').'" class="revdelbtn text_red dashicons dashicons-trash"></span>';
+
+				//prefer the locally cached avatar if we have one
+				$userpicsrc = ( isset($reviewsrow->userpiclocal) && $reviewsrow->userpiclocal!='' ) ? $reviewsrow->userpiclocal : $reviewsrow->userpic;
+				$userpic = '<img style="-webkit-user-select: none;width: 50px;" src="'.esc_url($userpicsrc).'" alt="">';
+
+				//review media thumbnails (lity lightbox)
+				$mediahtml = '';
+				if( isset($reviewsrow->mediaurlsarrayjson) && $reviewsrow->mediaurlsarrayjson!='' ){
+					$imagesarray = json_decode( $reviewsrow->mediaurlsarrayjson, true );
+					if( is_array($imagesarray) && count($imagesarray)>0 ){
+						$mediahtml = '<div class="mediaimgsdiv">';
+						foreach ( $imagesarray as $imgurl ) {
+							if($imgurl!=''){
+								$mediahtml .= '<a href="'.esc_url($imgurl).'" data-lity target="_blank"><img src="'.esc_url($imgurl).'" height="50" alt=""></a> ';
+							}
+						}
+						$mediahtml .= '</div>';
+					}
 				}
 
 	
-				$html .= '<tr id="'.$reviewsrow->id.'">
-						<th scope="col" class="manage-column">'.$userpic.'</th>
-						<th scope="col" class="manage-column">'.$reviewsrow->reviewer_name.'</th>
-						<th scope="col" class="manage-column">'.$reviewsrow->rating.'</th>
-						<th scope="col" class="manage-column">'.$reviewsrow->review_text.'</th>
-						<th scope="col" class="manage-column">'.$reviewsrow->created_time.'</th>
-						<th scope="col" class="manage-column">'.$reviewsrow->review_length.'</th>
-						<th scope="col" class="manage-column">'.$reviewsrow->pagename.'</th>
-						<th scope="col" class="manage-column">'.$reviewsrow->type.'</th>
+				$html .= '<tr id="'.$reviewsrow->id.'" class="'.esc_attr($hiddentrclass).'">
+						<th scope="col" class="manage-column">'.$hideicon.' '.$editdellink.'</th>
+						<th scope="col" class="wprev_row_userpic manage-column">'.$userpic.'</th>
+						<th scope="col" class="wprev_row_reviewer_name manage-column">'.esc_html($reviewsrow->reviewer_name).'</th>
+						<th scope="col" class="wprev_row_rating manage-column">'.esc_html($reviewsrow->rating).'</th>
+						<th scope="col" class="wprev_row_review_text manage-column">'.esc_html($reviewsrow->review_text).$mediahtml.'</th>
+						<th scope="col" class="wprev_row_created_time manage-column">'.esc_html($reviewsrow->created_time).'</th>
+						<th scope="col" class="manage-column">'.esc_html($reviewsrow->review_length).'</th>
+						<th scope="col" class="manage-column">'.esc_html($reviewsrow->pagename).'</th>
+						<th scope="col" class="manage-column">'.esc_html($reviewsrow->type).'</th>
 					</tr>';
 			}
 		} else {
@@ -199,7 +253,7 @@ _e('Search reviews, hide certain reviews, manually add reviews, save a CSV file 
 				
 		$html .= '</div>';		
  
- echo $html;
+echo $html;
 ?>
 </div></div></div>
 
@@ -218,4 +272,3 @@ _e('Search reviews, hide certain reviews, manually add reviews, save a CSV file 
 	  </div>
 	</div>
 	
-

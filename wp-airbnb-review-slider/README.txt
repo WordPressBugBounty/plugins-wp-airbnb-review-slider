@@ -4,7 +4,7 @@ Donate link: https://wpreviewslider.com/
 Tags: airbnb reviews, review slider, vacation rental reviews, testimonial slider, social proof
 Requires at least: 4.0.1
 Tested up to: 7.0
-Stable tag: 4.5
+Stable tag: 4.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,20 @@ Post on the [support forum](https://wordpress.org/support/plugin/wp-airbnb-revie
 5. Create as many templates as you like.
 
 == Changelog ==
+= 4.8 =
+* Small bug fixes and email opt-in.
+
+= 4.7 =
+* Multiple Airbnb listings: add, download, and delete sources from the Get Airbnb Reviews page.
+* Reviews now store listing page ID / name so Templates can filter by source and badges show per-listing averages.
+* Existing single listing URL is migrated automatically into the new sources list.
+
+= 4.6 =
+* New Style 6 card layout with live AJAX preview and save on the Templates page.
+* New Badge Settings tab to show an Airbnb rating badge beside or above your reviews.
+* Review List now shows hide/show, edit, and delete icons on every review, plus a quick edit panel for the reviewer avatar and date.
+* Media thumbnails with a lightbox viewer on reviews that include photos.
+* General slider and badge styling polish.
 
 = 4.5 =
 * Admin UI updated to match other WP Review Slider plugins (Welcome page, W3 tab bar, content panels).
@@ -197,6 +211,12 @@ Post on the [support forum](https://wordpress.org/support/plugin/wp-airbnb-revie
 * First Version
 
 == Upgrade Notice ==
+
+= 4.7 =
+* Multiple Airbnb listing sources with per-listing download and template filtering.
+
+= 4.6 =
+* New Style 6 layout, Badge Settings, and an upgraded Review List with hide/edit/delete and media thumbnails.
 
 = 4.5 =
 * New refreshed admin layout with Welcome page. Tested with WordPress 7.0.

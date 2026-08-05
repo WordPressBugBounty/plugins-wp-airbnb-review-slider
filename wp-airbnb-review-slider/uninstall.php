@@ -37,6 +37,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 		$option4 = 'wpairbnb_options';
 		$option5 = 'wprev_notice_hide_airbnb';
 		$option6 = 'wprev_activated_time_airbnb';
+		$option7 = 'wprev_airbnb_crawls';
 		
 	//================
 	//check for pro version, if yes then do not delete this stuff
@@ -60,6 +61,7 @@ $filename2 = plugin_dir_path( __DIR__ ).'/wp-review-slider-pro/wp-review-slider-
 			delete_option( $option4 );
 			delete_option( $option5);
 			delete_option( $option6 );
+			delete_option( $option7 );
 
 			
 			//delete review table in database
@@ -72,6 +74,11 @@ $filename2 = plugin_dir_path( __DIR__ ).'/wp-review-slider-pro/wp-review-slider-
 			//drop review template table 
 			$table_name = $wpdb->prefix . 'wpairbnb_post_templates';
 			
+			$wpdb->query( "DROP TABLE IF EXISTS $table_name" );
+
+			//drop totals/averages table
+			$table_name = $wpdb->prefix . 'wpairbnb_total_averages';
+
 			$wpdb->query( "DROP TABLE IF EXISTS $table_name" );
 		} 
 		else 
@@ -89,6 +96,7 @@ $filename2 = plugin_dir_path( __DIR__ ).'/wp-review-slider-pro/wp-review-slider-
 				delete_option( $option4 );
 				delete_option( $option5);
 			delete_option( $option6 );
+			delete_option( $option7 );
 				
 				$table_name = $wpdb->prefix . 'wpairbnb_reviews';
 				
@@ -97,6 +105,11 @@ $filename2 = plugin_dir_path( __DIR__ ).'/wp-review-slider-pro/wp-review-slider-
 				//drop review template table 
 				$table_name = $wpdb->prefix . 'wpairbnb_post_templates';
 				
+				$wpdb->query( "DROP TABLE IF EXISTS $table_name" );
+
+				//drop totals/averages table
+				$table_name = $wpdb->prefix . 'wpairbnb_total_averages';
+
 				$wpdb->query( "DROP TABLE IF EXISTS $table_name" );
 
 				// OR

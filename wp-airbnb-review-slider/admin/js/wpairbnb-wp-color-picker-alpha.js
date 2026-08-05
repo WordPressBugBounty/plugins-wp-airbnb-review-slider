@@ -14,7 +14,6 @@
 	var wpColorPickerAlpha = {
 		'version' : 300
 	};
-	console.log('new color picker loaded');
 
 	// Always try to use the last version of this script.
 	if ( 'wpColorPickerAlpha' in window && 'version' in window.wpColorPickerAlpha ) {

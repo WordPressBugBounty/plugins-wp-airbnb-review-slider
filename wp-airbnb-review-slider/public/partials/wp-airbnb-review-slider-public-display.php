@@ -88,24 +88,29 @@
 				$rtypefilter = $rtypefilter.")";
 			}
 		}
-		//rpage filter-----
-		$rpagefilter = "";
-		if($currentform[0]->rpage!=""){
-			$rpagearray = json_decode($currentform[0]->rpage);
-			if(is_array($rpagearray)){
-			$rpagearray = array_filter($rpagearray);
-			$rpagearray = array_values($rpagearray);
-			if(count($rpagearray)>0){
-				for ($x = 0; $x < count($rpagearray); $x++) {
-					
-					if($x==0){
-						$rpagefilter = "AND (pageid = '".$rpagearray[$x]."'";
-					} else {
-						$rpagefilter = $rpagefilter." OR pageid = '".$rpagearray[$x]."'";
-					}
-				}
-				$rpagefilter = $rpagefilter.")";
+		//source (rpage) filter — single pageid, safely bound via $wpdb->prepare below.
+		//Backward compatible: legacy JSON-array values use the first pageid, and an
+		//empty value falls back to the last-added source (or the newest review).
+		$filtersource = isset($currentform[0]->rpage) ? trim($currentform[0]->rpage) : "";
+		if($filtersource!=""){
+			$decodedsource = json_decode($filtersource, true);
+			if(is_array($decodedsource)){
+				$decodedsource = array_values(array_filter($decodedsource));
+				$filtersource = isset($decodedsource[0]) ? $decodedsource[0] : "";
 			}
+		}
+		if($filtersource==""){
+			$crawlsraw = get_option('wprev_airbnb_crawls');
+			$crawls = $crawlsraw ? json_decode($crawlsraw, true) : array();
+			if(is_array($crawls) && count($crawls)>0){
+				$crawlkeys = array_keys($crawls);
+				$filtersource = (string) end($crawlkeys);
+			}
+			if($filtersource==""){
+				$newestpageid = $wpdb->get_var("SELECT pageid FROM ".$table_name." WHERE pageid != '' ORDER BY created_time_stamp DESC LIMIT 1");
+				if($newestpageid){
+					$filtersource = $newestpageid;
+				}
 			}
 		}
 		
@@ -137,11 +142,17 @@
 			$query = $query.")";
 			$totalreviews = $wpdb->get_results($query);
 		} else {
+			$sourcefilter = "";
+			$prepareargs = array( "0", $min_words, $max_words, $min_rating, "yes" );
+			if($filtersource!=""){
+				$sourcefilter = " AND pageid = %s";
+				$prepareargs[] = $filtersource;
+			}
 			$totalreviews = $wpdb->get_results(
 				$wpdb->prepare("SELECT * FROM ".$table_name."
-				WHERE id>%d AND review_length >= %d AND review_length <= %d AND rating >= %d AND hide != %s ".$rtypefilter." ".$rpagefilter."
+				WHERE id>%d AND review_length >= %d AND review_length <= %d AND rating >= %d AND hide != %s ".$rtypefilter.$sourcefilter."
 				ORDER BY ".$sorttable." ".$sortdir." 
-				LIMIT ".$tablelimit." ", "0","$min_words","$max_words","$min_rating","yes")
+				LIMIT ".$tablelimit." ", $prepareargs)
 			);
 		}
 
@@ -203,27 +214,51 @@
 				if($currentform[0]->style=="4"){
 					$misc_style = $misc_style . '#wprev-slider-'.$currentform[0]->id.' .wprev_preview_tcolor3_T'.$currentform[0]->style.' {color:'.$template_misc_array['tcolor3'].';}';
 				}
+
+				//read more link color
+				if ( ! empty( $template_misc_array['read_more_color'] ) ) {
+					$rmc = trim( (string) $template_misc_array['read_more_color'] );
+					if ( preg_match( '/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/', $rmc )
+						|| preg_match( '/^rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*(,\s*[\d.]+\s*)?\)$/i', $rmc ) ) {
+						$misc_style = $misc_style . '#wprev-slider-' . $currentform[0]->id . ' .wprs_rd_more{color:' . $rmc . ';}';
+					}
+				}
 	
 				//echo "<style>".$misc_style."</style>";
 				//$custom_css = $misc_style;
 			}
 			
-			//print out user style added
-			echo "<style>".$misc_style.$currentform[0]->template_css."</style>";
-			//$custom_css = $misc_style . $currentform[0]->template_css;
-			
-			//wp_add_inline_style( 'wpairbnb_w3', $custom_css );
+		//print out user style added
+		echo "<style>".$misc_style.$currentform[0]->template_css."</style>";
+		//$custom_css = $misc_style . $currentform[0]->template_css;
 		
+		//wp_add_inline_style( 'wpairbnb_w3', $custom_css );
+
+		//badge: open phase (style + outer wrap + left/above badge, no-op if Location is not set)
+		//Prefer the misc override (kept in sync on save), else fall back to the
+		//already-resolved single pageid from the reviews query above.
+		if ( isset( $template_misc_array['filtersource'] ) && $template_misc_array['filtersource'] !== '' ) {
+			$filtersource = $template_misc_array['filtersource'];
+		}
+		$wpairbnb_badge_phase = 'open';
+		include plugin_dir_path( __FILE__ ) . 'wpairbnb_badge_render.php';
+
 		//if making slide show then add it here
+
+		// Style 6 without a badge: tighter arrow inset (see .wprev_style6_nobadge CSS).
+		$style6_nobadge = '';
+		if ( (string) $currentform[0]->style === '6' && $template_misc_array['blocation'] === '' ) {
+			$style6_nobadge = ' wprev_style6_nobadge';
+		}
 
 		if($currentform[0]->createslider == "yes"){
 			//make sure we have enough to create a show here
 			if($totalreviews>$reviewsperpage){
 				$makingslideshow = true;
-				echo '<div class="wprev-slider" id="wprev-slider-'.$currentform[0]->id.'"><ul>';
+				echo '<div class="wprev-slider'.esc_attr($style6_nobadge).'" id="wprev-slider-'.$currentform[0]->id.'"><ul>';
 			}
 		} else {
-			echo '<div class="wprev-no-slider" id="wprev-slider-'.$currentform[0]->id.'">';
+			echo '<div class="wprev-no-slider'.esc_attr($style6_nobadge).'" id="wprev-slider-'.$currentform[0]->id.'">';
 		}
 		$loopnum = 1;
 		foreach ( $totalreviewschunked as $reviewschunked ){
@@ -336,7 +371,11 @@
 		} else {
 		echo '</div>';
 		}
-	 
+
+		//badge: close phase (right-side badge, then close the outer wrap; no-op if Location is not set)
+		$wpairbnb_badge_phase = 'close';
+		include plugin_dir_path( __FILE__ ) . 'wpairbnb_badge_render.php';
+
 	}
 }
 ?>

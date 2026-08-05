@@ -96,6 +96,13 @@ class WP_Airbnb_Review_Public {
 		wp_enqueue_style( 'wpairbnb_w3' );
 		wp_enqueue_style( 'unslider' );
 		wp_enqueue_style( 'unslider-dots' );
+
+		//the review badge (SVG stars + badge markup) shares its CSS with Style 6 — make
+		//sure it loads even for Style 1 templates that have a badge Location set.
+		if ( ! wp_style_is( 'wp-airbnb-review-slider-public_template6', 'enqueued' ) && ! empty( $templatearray ) ) {
+			wp_register_style( 'wp-airbnb-review-slider-public_template6', plugin_dir_url( __FILE__ ) . 'css/wprev-public_template6.css', array(), $this->version, 'all' );
+			wp_enqueue_style( 'wp-airbnb-review-slider-public_template6' );
+		}
 		
 		//add inline styles from saved templates.
 		//$color = get_theme_mod( 'custom-color', '#FE001A' );
@@ -133,6 +140,10 @@ class WP_Airbnb_Review_Public {
 		wp_enqueue_script( $this->_token."_unslider-min", plugin_dir_url( __FILE__ ) . 'js/wprs-unslider-swipe.js', array( 'jquery' ), $this->version, false );
 		
 		wp_enqueue_script( $this->_token."_plublic", plugin_dir_url( __FILE__ ) . 'js/wprev-public.js', array( 'jquery' ), $this->version, false );
+
+		//lity lightbox, used for review media thumbnails (Style 6)
+		wp_enqueue_style( $this->_token."_lity_min", plugin_dir_url( __FILE__ ) . 'css/lity.min.css', array(), $this->version, 'all' );
+		wp_enqueue_script( $this->_token."_lity_min", plugin_dir_url( __FILE__ ) . 'js/lity.min.js', array( 'jquery' ), $this->version, false );
 
 	}
 	

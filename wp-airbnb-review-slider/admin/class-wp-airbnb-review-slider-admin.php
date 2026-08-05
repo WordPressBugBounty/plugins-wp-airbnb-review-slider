@@ -75,7 +75,7 @@ class WP_Airbnb_Review_Admin {
 		 */
 		//only load for this plugin wp_airbnb-settings-pricing
 		if(isset($_GET['page'])){
-			if($_GET['page']=="wp_airbnb-reviews" || $_GET['page']=="wp_airbnb-templates_posts" || $_GET['page']=="wp_airbnb-get_airbnb" || $_GET['page']=="wp_airbnb-get_pro" || $_GET['page']=="wp_airbnb-welcome"){
+			if($_GET['page']=="wp_airbnb-reviews" || $_GET['page']=="wp_airbnb-templates_posts" || $_GET['page']=="wp_airbnb-get_airbnb" || $_GET['page']=="wp_airbnb-get_pro" || $_GET['page']=="wp_airbnb-welcome" || $_GET['page']=="wp_airbnb-opt"){
 
 			wp_register_style( 'Font_Awesome', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css' );
 			wp_enqueue_style('Font_Awesome');
@@ -85,8 +85,10 @@ class WP_Airbnb_Review_Admin {
 			wp_enqueue_style( $this->_token, plugin_dir_url( __FILE__ ) . 'css/wpairbnb_admin.css', array(), $this->version, 'all' );
 			wp_enqueue_style( $this->_token."_wpairbnb_w3", plugin_dir_url( __FILE__ ) . 'css/wpairbnb_w3.css', array(), $this->version, 'all' );
 			}
+			//load template styles for the templates page (Style 1 + Style 6 live preview)
 			if($_GET['page']=="wp_airbnb-templates_posts" || $_GET['page']=="wp_airbnb-get_pro" || $_GET['page']=="wp_airbnb-welcome"){
 				wp_enqueue_style( $this->_token."_style1", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprev-public_template1.css', array(), $this->version, 'all' );
+				wp_enqueue_style( $this->_token."_style6", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprev-public_template6.css', array(), $this->version, 'all' );
 			}
 		}
 
@@ -114,11 +116,20 @@ class WP_Airbnb_Review_Admin {
 
 		//scripts for all pages in this plugin
 		if(isset($_GET['page'])){
-			if($_GET['page']=="wp_airbnb-reviews" || $_GET['page']=="wp_airbnb-templates_posts" || $_GET['page']=="wp_airbnb-get_airbnb" || $_GET['page']=="wp_airbnb-get_pro" || $_GET['page']=="wp_airbnb-welcome"){
+			if($_GET['page']=="wp_airbnb-reviews" || $_GET['page']=="wp_airbnb-templates_posts" || $_GET['page']=="wp_airbnb-get_airbnb" || $_GET['page']=="wp_airbnb-get_pro" || $_GET['page']=="wp_airbnb-welcome" || $_GET['page']=="wp_airbnb-opt"){
 				//pop-up script
 				wp_register_script( 'simple-popup-js',  plugin_dir_url( __FILE__ ) . 'js/wpairbnb_simple-popup.min.js' , '', $this->version, false );
 				wp_enqueue_script( 'simple-popup-js' );
 				
+			}
+			//scripts for the get airbnb reviews page (multi-source add/download)
+			if($_GET['page']=="wp_airbnb-get_airbnb"){
+				wp_enqueue_script('wpairbnb_get_airbnb-js', plugin_dir_url( __FILE__ ) . 'js/wpairbnb_get_airbnb.js', array( 'jquery' ), $this->version, false );
+				wp_localize_script('wpairbnb_get_airbnb-js', 'adminjs_script_vars',
+					array(
+					'wpairbnb_nonce'=> wp_create_nonce('randomnoncestring')
+					)
+				);
 			}
 		}
 		
@@ -141,13 +152,25 @@ class WP_Airbnb_Review_Admin {
 				wp_enqueue_script('media-upload');
 				wp_enqueue_script('wptuts-upload');
 
+				//lity lightbox for review media thumbnails
+				wp_enqueue_style( $this->_token."_lity_min", plugin_dir_url( __FILE__ ) . 'css/lity.min.css', array(), $this->version, 'all' );
+				wp_enqueue_script( 'wpairbnb_lity-js', plugin_dir_url( __FILE__ ) . 'js/lity.min.js', array( 'jquery' ), $this->version, false );
+
 			}
 			
 			//scripts for templates posts page
 			if($_GET['page']=="wp_airbnb-templates_posts"){
-			
+
+				//add color picker here
+				wp_enqueue_style( 'wp-color-picker' );
+				//alpha add-on — extends Iris without replacing the WP color-result button markup
+				wp_enqueue_script( 'wp-color-picker-alpha', plugin_dir_url( __FILE__ ) . 'js/wpairbnb-wp-color-picker-alpha.js', array( 'wp-color-picker' ), '3.0.0', false );
+
+				//needed for the badge business image uploader (wp.media, not thickbox)
+				wp_enqueue_media();
+
 				//admin js
-				wp_enqueue_script('wpairbnb_templates_posts_page-js', plugin_dir_url( __FILE__ ) . 'js/wpairbnb_templates_posts_page.js', array( 'jquery' ), $this->version, false );
+				wp_enqueue_script('wpairbnb_templates_posts_page-js', plugin_dir_url( __FILE__ ) . 'js/wpairbnb_templates_posts_page.js', array( 'jquery', 'wp-color-picker', 'wp-color-picker-alpha' ), $this->version, false );
 				//used for ajax
 				wp_localize_script('wpairbnb_templates_posts_page-js', 'adminjs_script_vars', 
 					array(
@@ -155,13 +178,13 @@ class WP_Airbnb_Review_Admin {
 					'pluginsUrl' => wprev_airbnb_plugin_url
 					)
 				);
+
+				//slider engine so the live preview can build working sliders
+				wp_enqueue_script( $this->_token."_unslider-swipe-min", plugin_dir_url( dirname( __FILE__ ) ) . 'public/js/wprs-unslider-swipe.js', array( 'jquery' ), $this->version, false );
+
+				//thickbox kept for the remaining inline "pro settings" popup on this page
  				wp_enqueue_script('thickbox');
 				wp_enqueue_style('thickbox');
-				
-				//add color picker here
-				wp_enqueue_style( 'wp-color-picker' );
-				//enque alpha color add-on wpairbnb-wp-color-picker-alpha.js
-				wp_enqueue_script( 'wp-color-picker-alpha', plugin_dir_url( __FILE__ ) . 'js/wpairbnb-wp-color-picker-alpha.js', array( 'wp-color-picker' ), '2.1.2', true );
 
 			}
 		}
@@ -206,15 +229,52 @@ class WP_Airbnb_Review_Admin {
 		$submenu_title = 'Templates';
 		$submenu_slug = 'wp_airbnb-templates_posts';
 		add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_airbnb_templates_posts'));
-		
+
+		// Email opt-in (also used for first-visit redirect)
+		add_submenu_page( $menu_slug, 'WP Airbnb Reviews : Email Opt-In', __( 'Email Opt-In', 'wp-airbnb-review-slider' ), $capability, 'wp_airbnb-opt', array( $this, 'wp_airbnb_opt' ) );
+
 		// Now add the submenu page for the reviews templates
 		//$submenu_page_title = 'WP FB Reviews : Upgrade';
 		//$submenu_title = 'Get Pro';
 		//$submenu_slug = 'wp_airbnb-get_pro';
 		//add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_fb_getpro'));
-	
+
 
 	}
+
+	/**
+	 * First visit to any plugin admin page: send users to the Brevo email opt-in
+	 * until they Allow, Opt Out, or Skip.
+	 */
+	public function wpairbnb_maybe_redirect_optin() {
+		if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		if ( empty( $_GET['page'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return;
+		}
+		$page = sanitize_text_field( wp_unslash( $_GET['page'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$plugin_pages = array(
+			'wp_airbnb-welcome',
+			'wp_airbnb-reviews',
+			'wp_airbnb-get_airbnb',
+			'wp_airbnb-templates_posts',
+			'wp_airbnb-get_pro',
+		);
+		if ( ! in_array( $page, $plugin_pages, true ) ) {
+			return;
+		}
+		$optin = get_option( 'wp_airbnb_optin', 'blank' );
+		if ( in_array( $optin, array( 'blank', '' ), true ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=wp_airbnb-opt' ) );
+			exit;
+		}
+	}
+
+	public function wp_airbnb_opt() {
+		require_once plugin_dir_path( __FILE__ ) . '/partials/opt.php';
+	}
+
 	public function wprev_airbnb_add_external_link_admin_submenu() {
 		global $submenu;
 
@@ -500,6 +560,79 @@ class WP_Airbnb_Review_Admin {
 
 		die();
 	}
+
+	/**
+	 * Ajax: save an edited review (reviewer avatar URL + display date) without a
+	 * page reload, called from admin/js/wpairbnb_review_list_page.js.
+	 * @access  public
+	 * @since   4.6
+	 * @return  void
+	 */
+	public function wpairbnb_savereview_ajax() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions', 'wp-airbnb-review-slider' ) ) );
+			return;
+		}
+
+		check_ajax_referer( 'randomnoncestring', 'wpairbnb_nonce' );
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'wpairbnb_reviews';
+
+		$r_id       = isset( $_POST['editrid'] ) ? absint( $_POST['editrid'] ) : 0;
+		$avatar_url = isset( $_POST['avatar_url'] ) ? esc_url_raw( wp_unslash( $_POST['avatar_url'] ) ) : '';
+		$rdate_raw  = isset( $_POST['review_date'] ) ? sanitize_text_field( wp_unslash( $_POST['review_date'] ) ) : '';
+
+		if ( $r_id <= 0 ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid review.', 'wp-airbnb-review-slider' ) ) );
+			return;
+		}
+
+		$existing = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table_name} WHERE id = %d", $r_id ) );
+		if ( ! $existing ) {
+			wp_send_json_error( array( 'message' => __( 'Review not found.', 'wp-airbnb-review-slider' ) ) );
+			return;
+		}
+
+		//keep userpic and userpiclocal in sync so the front-end shows the edited avatar
+		$data   = array(
+			'userpic'      => $avatar_url,
+			'userpiclocal' => $avatar_url,
+		);
+		$format = array( '%s', '%s' );
+
+		$parsed_stamp = $rdate_raw !== '' ? strtotime( $rdate_raw ) : false;
+		if ( ! $parsed_stamp ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid date. Use the format YYYY-MM-DD HH:MM:SS.', 'wp-airbnb-review-slider' ) ) );
+			return;
+		}
+
+		$created_time               = date( 'Y-m-d H:i:s', $parsed_stamp );
+		$data['created_time']       = $created_time;
+		$data['created_time_stamp'] = $parsed_stamp;
+		$format[]                   = '%s';
+		$format[]                   = '%d';
+
+		$updated = $wpdb->update(
+			$table_name,
+			$data,
+			array( 'id' => $r_id ),
+			$format,
+			array( '%d' )
+		);
+
+		if ( false === $updated ) {
+			wp_send_json_error( array( 'message' => __( 'Database error while saving. Please try again.', 'wp-airbnb-review-slider' ) ) );
+			return;
+		}
+
+		wp_send_json_success(
+			array(
+				'userpic' => $avatar_url,
+				'date'    => $created_time,
+			)
+		);
+	}
 	
 	/**
 	 * Ajax, retrieves reviews from table, called from javascript file wpairbnb_templates_posts_page.js
@@ -733,7 +866,8 @@ class WP_Airbnb_Review_Admin {
 	
 
 	/**
-	 * download airbnb reviews when clicking the save button on Airbnb page
+	 * download airbnb reviews when clicking the legacy Save Settings button
+	 * (kept for backward compatibility with the old single-URL settings form).
 	 * @access  public
 	 * @since   1.0.0
 	 * @return  void
@@ -741,19 +875,276 @@ class WP_Airbnb_Review_Admin {
 	public function wpairbnb_download_airbnb() {
       global $pagenow;
       if (isset($_GET['settings-updated']) && $pagenow=='admin.php' && current_user_can('export') && $_GET['page']=='wp_airbnb-get_airbnb') {
-		  
-		  //if this is a user page handle different, https://www.airbnb.com/users/show/196061205
-		  $options = get_option('wpairbnb_airbnb_settings');
-		$tempurl = $options['airbnb_business_url'];
-		if (strpos($tempurl, '/users/show/') !== false) {
-			//user page
-			$this->wpairbnb_download_airbnb_master_users();
-			} else {
-			$this->wpairbnb_download_airbnb_master();
+
+		$options = get_option('wpairbnb_airbnb_settings');
+		$tempurl = isset( $options['airbnb_business_url'] ) ? trim( $options['airbnb_business_url'] ) : '';
+		if ( $tempurl !== '' && filter_var( $tempurl, FILTER_VALIDATE_URL ) ) {
+			$pageid   = $this->wpairbnb_extract_pageid_from_url( $tempurl );
+			$pagename = $this->wpairbnb_extract_businessname_from_url( $tempurl );
+			$result   = $this->wpairbnb_download_one_source( $tempurl, $pageid, $pagename );
+			$this->errormsg = isset( $result['ackmsg'] ) ? $result['ackmsg'] : '';
 		}
       }
     }
-	
+
+	/**
+	 * Get saved Airbnb crawl sources, migrating the legacy single URL if needed.
+	 *
+	 * @return array
+	 */
+	public function wpairbnb_get_crawls() {
+		$raw = get_option( 'wprev_airbnb_crawls', 'not-exists' );
+		if ( 'not-exists' === $raw ) {
+			$crawls = array();
+			update_option( 'wprev_airbnb_crawls', wp_json_encode( $crawls ) );
+		} else {
+			$crawls = json_decode( $raw, true );
+			if ( ! is_array( $crawls ) ) {
+				$crawls = array();
+			}
+		}
+
+		// Migrate legacy single airbnb_business_url into crawls.
+		$options = get_option( 'wpairbnb_airbnb_settings' );
+		if ( is_array( $options ) && ! empty( $options['airbnb_business_url'] ) ) {
+			$url = esc_url_raw( trim( $options['airbnb_business_url'] ) );
+			if ( $url && filter_var( $url, FILTER_VALIDATE_URL ) ) {
+				$pageid = $this->wpairbnb_extract_pageid_from_url( $url );
+				if ( $pageid && ! isset( $crawls[ $pageid ] ) ) {
+					$crawls[ $pageid ] = array(
+						'pageid'       => $pageid,
+						'businessname' => $this->wpairbnb_extract_businessname_from_url( $url ),
+						'url'          => strtok( $url, '?' ),
+						'avg'          => '',
+						'total'        => '',
+					);
+					update_option( 'wprev_airbnb_crawls', wp_json_encode( $crawls ) );
+				}
+			}
+		}
+
+		return $crawls;
+	}
+
+	/**
+	 * Persist crawls option and keep legacy airbnb_business_url in sync.
+	 *
+	 * @param array $crawls Sources keyed by pageid.
+	 */
+	public function wpairbnb_save_crawls( $crawls ) {
+		if ( ! is_array( $crawls ) ) {
+			$crawls = array();
+		}
+		update_option( 'wprev_airbnb_crawls', wp_json_encode( $crawls ) );
+
+		// Keep first source URL in legacy option for older template link fallbacks.
+		$options = get_option( 'wpairbnb_airbnb_settings' );
+		if ( ! is_array( $options ) ) {
+			$options = array();
+		}
+		$first_url = '';
+		foreach ( $crawls as $source ) {
+			if ( is_array( $source ) && ! empty( $source['url'] ) ) {
+				$first_url = $source['url'];
+				break;
+			}
+		}
+		$options['airbnb_business_url'] = $first_url;
+		update_option( 'wpairbnb_airbnb_settings', $options );
+	}
+
+	/**
+	 * Extract the Airbnb listing/experience/user id from a business URL.
+	 *
+	 * @param string $url Airbnb URL.
+	 * @return string
+	 */
+	public function wpairbnb_extract_pageid_from_url( $url ) {
+		$url = strtok( $url, '?' );
+		if ( preg_match( '~/rooms/(?:[^/?#]+/)?([0-9]+)~i', $url, $m ) ) {
+			return sanitize_text_field( $m[1] );
+		}
+		if ( preg_match( '~/experiences/(?:[^/?#]+/)?([0-9]+)~i', $url, $m ) ) {
+			return sanitize_text_field( $m[1] );
+		}
+		if ( preg_match( '~/users/show/([0-9]+)~i', $url, $m ) ) {
+			return sanitize_text_field( $m[1] );
+		}
+		// Fallback: last run of digits in the path.
+		$path = wp_parse_url( $url, PHP_URL_PATH );
+		if ( $path && preg_match( '~([0-9]+)(?!.*[0-9])~', $path, $m ) ) {
+			return sanitize_text_field( $m[1] );
+		}
+		return '';
+	}
+
+	/**
+	 * Best-effort business name from an Airbnb URL (Airbnb has no readable
+	 * slug like Yelp, so this is a generic label until the real title is
+	 * known — the crawl-server response has no page title either).
+	 *
+	 * @param string $url Airbnb URL.
+	 * @return string
+	 */
+	public function wpairbnb_extract_businessname_from_url( $url ) {
+		$pageid = $this->wpairbnb_extract_pageid_from_url( $url );
+		if ( $pageid === '' ) {
+			return __( 'Airbnb Listing', 'wp-airbnb-review-slider' );
+		}
+		if ( stripos( $url, '/experiences/' ) !== false ) {
+			return sprintf( __( 'Airbnb Experience %s', 'wp-airbnb-review-slider' ), $pageid );
+		}
+		if ( stripos( $url, '/users/show/' ) !== false ) {
+			return sprintf( __( 'Airbnb Host %s', 'wp-airbnb-review-slider' ), $pageid );
+		}
+		return sprintf( __( 'Airbnb Listing %s', 'wp-airbnb-review-slider' ), $pageid );
+	}
+
+	/**
+	 * Build one source table row HTML for AJAX add.
+	 *
+	 * @param string $pageid Page id.
+	 * @param array  $source Source data.
+	 * @return string
+	 */
+	public function wpairbnb_source_row_html( $pageid, $source ) {
+		$bname     = isset( $source['businessname'] ) ? $source['businessname'] : '';
+		$url       = isset( $source['url'] ) ? $source['url'] : '';
+		$avg       = isset( $source['avg'] ) ? $source['avg'] : '';
+		$total     = isset( $source['total'] ) ? $source['total'] : '';
+		$avg_total = ( $avg !== '' || $total !== '' ) ? esc_html( $avg ) . ' / ' . esc_html( $total ) : '—';
+		$del_url   = wp_nonce_url(
+			admin_url( 'admin.php?page=wp_airbnb-get_airbnb&ract=del&pageid=' . rawurlencode( $pageid ) ),
+			'wpairbnb_del_source'
+		);
+
+		ob_start();
+		?>
+		<tr data-pageid="<?php echo esc_attr( $pageid ); ?>">
+			<td>
+				<?php echo esc_html( $bname ); ?>
+				<?php if ( $url ) : ?>
+					<br><a href="<?php echo esc_url( $url ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'View on Airbnb', 'wp-airbnb-review-slider' ); ?></a>
+				<?php endif; ?>
+			</td>
+			<td><?php echo esc_html( $pageid ); ?></td>
+			<td class="airbnb-source-stats"><?php echo $avg_total; ?></td>
+			<td>
+				<button type="button" class="button button-primary downloadrevs" data-pageid="<?php echo esc_attr( $pageid ); ?>"><?php esc_html_e( 'Download Reviews', 'wp-airbnb-review-slider' ); ?></button>
+				<span class="buttonloader2 wprevloader"></span>
+				<a class="button" style="color:#a00;" href="<?php echo esc_url( $del_url ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Delete this source and its reviews?', 'wp-airbnb-review-slider' ) ); ?>');"><?php esc_html_e( 'Delete', 'wp-airbnb-review-slider' ); ?></a>
+				<span class="airbnb-source-msg"></span>
+			</td>
+		</tr>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
+	 * Delete a source, its reviews, and averages row.
+	 *
+	 * @param string $pageid Page id.
+	 */
+	public function wpairbnb_delete_source( $pageid ) {
+		$pageid = sanitize_text_field( $pageid );
+		if ( $pageid === '' ) {
+			return;
+		}
+		$crawls = $this->wpairbnb_get_crawls();
+		unset( $crawls[ $pageid ] );
+		$this->wpairbnb_save_crawls( $crawls );
+
+		global $wpdb;
+		$wpdb->delete( $wpdb->prefix . 'wpairbnb_reviews', array( 'pageid' => $pageid ) );
+		$wpdb->delete( $wpdb->prefix . 'wpairbnb_total_averages', array( 'btp_id' => $pageid ) );
+	}
+
+	/**
+	 * AJAX: add an Airbnb source URL.
+	 */
+	public function wpairbnb_ajax_add_source() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => 'Insufficient permissions.' ) );
+			wp_die();
+		}
+		check_ajax_referer( 'randomnoncestring', 'wpairbnb_nonce' );
+
+		$url  = isset( $_POST['airbnb_url'] ) ? esc_url_raw( trim( wp_unslash( $_POST['airbnb_url'] ) ) ) : '';
+		$name = isset( $_POST['businessname'] ) ? sanitize_text_field( wp_unslash( $_POST['businessname'] ) ) : '';
+
+		if ( ! $url || ! filter_var( $url, FILTER_VALIDATE_URL ) ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => __( 'Please enter a valid Airbnb URL.', 'wp-airbnb-review-slider' ) ) );
+			wp_die();
+		}
+		if ( stripos( $url, 'airbnb.' ) === false ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => __( 'URL must be an Airbnb listing page.', 'wp-airbnb-review-slider' ) ) );
+			wp_die();
+		}
+
+		$pageid = $this->wpairbnb_extract_pageid_from_url( $url );
+		if ( $pageid === '' ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => __( 'Could not determine a listing ID from that URL.', 'wp-airbnb-review-slider' ) ) );
+			wp_die();
+		}
+
+		$crawls = $this->wpairbnb_get_crawls();
+		if ( isset( $crawls[ $pageid ] ) ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => __( 'That source is already added.', 'wp-airbnb-review-slider' ) ) );
+			wp_die();
+		}
+
+		if ( $name === '' ) {
+			$name = $this->wpairbnb_extract_businessname_from_url( $url );
+		}
+
+		$source = array(
+			'pageid'       => $pageid,
+			'businessname' => $name,
+			'url'          => strtok( $url, '?' ),
+			'avg'          => '',
+			'total'        => '',
+		);
+		$crawls[ $pageid ] = $source;
+		$this->wpairbnb_save_crawls( $crawls );
+
+		echo wp_json_encode(
+			array(
+				'ack'      => 'success',
+				'ackmsg'   => __( 'Source added. Click Download Reviews to fetch reviews.', 'wp-airbnb-review-slider' ),
+				'pageid'   => $pageid,
+				'row_html' => $this->wpairbnb_source_row_html( $pageid, $source ),
+			)
+		);
+		wp_die();
+	}
+
+	/**
+	 * AJAX: download reviews for one saved source.
+	 */
+	public function wpairbnb_ajax_download_source() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => 'Insufficient permissions.' ) );
+			wp_die();
+		}
+		check_ajax_referer( 'randomnoncestring', 'wpairbnb_nonce' );
+
+		$pageid = isset( $_POST['pageid'] ) ? sanitize_text_field( wp_unslash( $_POST['pageid'] ) ) : '';
+		$crawls = $this->wpairbnb_get_crawls();
+		if ( $pageid === '' || empty( $crawls[ $pageid ]['url'] ) ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmsg' => __( 'Source not found. Add the URL again.', 'wp-airbnb-review-slider' ) ) );
+			wp_die();
+		}
+
+		$result = $this->wpairbnb_download_one_source(
+			$crawls[ $pageid ]['url'],
+			$pageid,
+			isset( $crawls[ $pageid ]['businessname'] ) ? $crawls[ $pageid ]['businessname'] : ''
+		);
+
+		echo wp_json_encode( $result );
+		wp_die();
+	}
+
 	//fix stringtotime for other languages
 	private function myStrtotime($date_string) { 
 		$monthnamearray = array(
@@ -1037,265 +1428,430 @@ class WP_Airbnb_Review_Admin {
 	}
 		
 	/**
-	 * download airbnb reviews
-	 * @access  public
-	 * @since   1.0.0
-	 * @return  void
-	 */	
-	 
-	 //---7/16/2025 going to use our crawling server now.
-	//Airbnb
-	public function wpairbnb_download_airbnb_master(){
-		$result['ack']='success';
-	
-		$errormsg='';
-		$reviewsarraytemp = Array();
-		$nhful='new';
-		$reviewsarray= Array();
-		$crawlerreviewsarray= Array();
-		
+	 * Call the remote crawling service (crawl.ljapps.com) for one Airbnb
+	 * listing/experience and return an array of normalized, sanitized
+	 * reviews plus avg/total. Airbnb pages return everything in one call
+	 * (the crawl server requests up to 48 reviews), so unlike Yelp there
+	 * is no paging loop.
+	 *
+	 * @param string $listedurl Airbnb listing/experience URL.
+	 * @param int    $pagenum   Page number (kept for parity with the crawl API).
+	 * @param string $iscron    'yes' for cron, 'no' for manual.
+	 * @return array
+	 */
+	public function wprpfree_getapps_getrevs_page_airbnb( $listedurl, $pagenum, $iscron ) {
+		set_time_limit( 150 );
+
+		$result = array(
+			'ack'     => 'success',
+			'avg'     => '',
+			'total'   => '',
+			'reviews' => array(),
+		);
+
+		if ( ! filter_var( $listedurl, FILTER_VALIDATE_URL ) ) {
+			$result['ack']    = 'error';
+			$result['ackmsg'] = __( 'Please enter a valid URL.', 'wp-airbnb-review-slider' );
+			return $result;
+		}
+
+		$listedurl = strtok( stripslashes( $listedurl ), '?' );
+
+		if ( isset( $_SERVER['SERVER_ADDR'] ) && $_SERVER['SERVER_ADDR'] != '' ) {
+			$ip_server = $_SERVER['SERVER_ADDR'];
+		} else {
+			$ip_server = urlencode( get_site_url() );
+		}
+		$siteurl = urlencode( get_site_url() );
+
+		$nhful         = 'new';
+		$blockstoinsert = '20';
+
+		$tempurlval = 'https://crawl.ljapps.com/crawlrevs?rip=' . $ip_server . '&surl=' . $siteurl . '&scrapeurl=' . urlencode( $listedurl ) . '&stype=airbnb&sfp=pro&nobot=1&nhful=' . $nhful . '&locationtype=&scrapequery=&tempbusinessname=&pagenum=' . $pagenum . '&nextpageurl=&iscron=' . $iscron . '&blocks=' . $blockstoinsert;
+
+		$serverresponse = '';
+		$args           = array(
+			'timeout'   => 120,
+			'sslverify' => false,
+			'headers'   => array(
+				'Content-Type' => ' application/json',
+				'Accept'       => 'application/json',
+			),
+		);
+		$response = wp_remote_get( $tempurlval, $args );
+		if ( is_array( $response ) && ! is_wp_error( $response ) ) {
+			$serverresponse = $response['body'];
+		} else {
+			$result['ack']    = 'error';
+			$result['ackmsg'] = 'Error 0001a: trouble contacting crawling server with remote_get. Please try again or contact support. ' . ( is_wp_error( $response ) ? $response->get_error_message() : '' );
+			return $result;
+		}
+
+		// Check for block or timeout; fall back to the backup crawl server.
+		if ( strpos( $serverresponse, 'Please wait while your request is being verified' ) !== false || ! isset( $serverresponse ) || $serverresponse == '' || strpos( $serverresponse, 'Access denied by Imunify360 bot-protection.' ) !== false || strpos( $serverresponse, '403 Forbidden' ) !== false ) {
+			$response = wp_remote_get( 'https://ocean.ljapps.com/crawlrevs.php?rip=' . $ip_server . '&surl=' . $siteurl . '&scrapeurl=' . urlencode( $listedurl ) . '&stype=airbnb&sfp=pro&nobot=1&nhful=' . $nhful . '&locationtype=&scrapequery=&tempbusinessname=&pagenum=' . $pagenum . '&nextpageurl=', array( 'sslverify' => false, 'timeout' => 60 ) );
+			if ( is_array( $response ) && ! is_wp_error( $response ) ) {
+				$serverresponse = $response['body'];
+			}
+		}
+
+		$serverresponsearray = json_decode( $serverresponse, true );
+
+		if ( $serverresponse == '' || ! is_array( $serverresponsearray ) ) {
+			$result['ack']    = 'error';
+			$result['ackmsg'] = 'Error 0001: trouble contacting crawling server. Please try again or contact support.';
+			return $result;
+		}
+		if ( isset( $serverresponsearray['ack'] ) && $serverresponsearray['ack'] == 'error' ) {
+			$result['ack']    = 'error';
+			$result['ackmsg'] = 'Error 0002: ' . $serverresponsearray['ackmessage'];
+			return $result;
+		}
+		if ( ! isset( $serverresponsearray['result'] ) || ! is_array( $serverresponsearray['result'] ) ) {
+			$result['ack']    = 'error';
+			$result['ackmsg'] = 'Error 0002b: trouble finding reviews. Contact support with this error code and the URL you are using.';
+			return $result;
+		}
+		if ( isset( $serverresponsearray['result']['ack'] ) && $serverresponsearray['result']['ack'] == 'error' ) {
+			$result['ack']    = 'error';
+			$result['ackmsg'] = 'Error 0003: ' . $serverresponsearray['ackmessage'] . ' : ' . $serverresponsearray['result']['ackmsg'];
+			return $result;
+		}
+
+		$crawlerresultarray = $serverresponsearray['result'];
+
+		$result['avg']   = isset( $crawlerresultarray['avg'] ) ? $crawlerresultarray['avg'] : '';
+		$result['total'] = isset( $crawlerresultarray['total'] ) ? $crawlerresultarray['total'] : '';
+
+		$crawlerreviewsarray = ( isset( $crawlerresultarray['reviews'] ) && is_array( $crawlerresultarray['reviews'] ) ) ? $crawlerresultarray['reviews'] : array();
+
+		foreach ( $crawlerreviewsarray as $review ) {
+			$reviewer_name = isset( $review['reviewer_name'] ) ? trim( $review['reviewer_name'] ) : '';
+			if ( $reviewer_name === '' ) {
+				continue;
+			}
+
+			$tempownerres = '';
+			if ( isset( $review['owner_response'] ) && $review['owner_response'] != '' ) {
+				$tempownerres = sanitize_textarea_field( $review['owner_response'] );
+			}
+			$templocation = '';
+			if ( isset( $review['location'] ) && $review['location'] != '' ) {
+				$templocation = sanitize_text_field( $review['location'] );
+			}
+			$tempmediaurlsarrayjson = '';
+			if ( isset( $review['mediaurlsarrayjson'] ) && $review['mediaurlsarrayjson'] != '' ) {
+				$tempmediaurlsarrayjson = $this->wprevpro_sanitize_media_urls_json( $review['mediaurlsarrayjson'] );
+			}
+
+			// Untrusted data from the remote crawling service: sanitize every field.
+			$result['reviews'][] = array(
+				'reviewer_name'      => sanitize_text_field( $reviewer_name ),
+				'userpic'            => isset( $review['userimage'] ) ? esc_url_raw( $review['userimage'] ) : '',
+				'rating'             => isset( $review['rating'] ) ? (int) $review['rating'] : 0,
+				'updated'            => isset( $review['date'] ) ? sanitize_text_field( $review['date'] ) : '',
+				'review_text'        => isset( $review['review_text'] ) ? sanitize_textarea_field( $review['review_text'] ) : '',
+				'location'           => $templocation,
+				'owner_response'     => $tempownerres,
+				'mediaurlsarrayjson' => $tempmediaurlsarrayjson,
+				'from_url_review'    => isset( $review['from_url_review'] ) ? esc_url_raw( $review['from_url_review'] ) : '',
+			);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Sanitize a JSON-encoded array of media URLs from the remote crawling
+	 * service before it is stored or re-encoded.
+	 *
+	 * @param string $json Raw JSON string of URLs.
+	 * @return string Re-encoded JSON of sanitized URLs, or '' if invalid.
+	 */
+	private function wprevpro_sanitize_media_urls_json( $json ) {
+		$decoded = json_decode( $json, true );
+		if ( ! is_array( $decoded ) ) {
+			return '';
+		}
+
+		$safe = array();
+		foreach ( $decoded as $url ) {
+			if ( is_string( $url ) && $url !== '' ) {
+				$safe[] = esc_url_raw( $url );
+			}
+		}
+
+		return wp_json_encode( $safe );
+	}
+
+	/**
+	 * Download and store reviews for a single Airbnb source URL.
+	 *
+	 * @param string $tempurl  Airbnb listing/experience URL.
+	 * @param string $pageid   Page id (listing/experience/user id).
+	 * @param string $pagename Business name.
+	 * @return array
+	 */
+	public function wpairbnb_download_one_source( $tempurl, $pageid = '', $pagename = '' ) {
+		ini_set( 'memory_limit', '800M' );
+		set_time_limit( 180 );
+
+		$result = array(
+			'ack'    => 'success',
+			'ackmsg' => '',
+			'avg'    => '',
+			'total'  => '',
+		);
+
+		$tempurl = trim( $tempurl );
+		if ( ! filter_var( $tempurl, FILTER_VALIDATE_URL ) ) {
+			$result['ack']    = 'error';
+			$result['ackmsg'] = __( 'Please enter a valid URL.', 'wp-airbnb-review-slider' );
+			return $result;
+		}
+
+		$tempurl = strtok( $tempurl, '?' );
+
+		if ( $pageid === '' ) {
+			$pageid = $this->wpairbnb_extract_pageid_from_url( $tempurl );
+		}
+		if ( $pagename === '' ) {
+			$pagename = $this->wpairbnb_extract_businessname_from_url( $tempurl );
+		}
 
 		global $wpdb;
-		$table_name = $wpdb->prefix . 'wpairbnb_reviews';
-		$options = get_option('wpairbnb_airbnb_settings');
-		$listedurl = trim($options['airbnb_business_url']);
-		//make sure you have valid url, if not display message
+		$table_name  = $wpdb->prefix . 'wpairbnb_reviews';
+		$totalinsert = 0;
 
-		//echo "passed both tests";
-		$stripvariableurl = strtok($listedurl, '?');
-		//find the listing_id
-		$listing_id = (int) filter_var($stripvariableurl, FILTER_SANITIZE_NUMBER_INT);
-		
-		if (filter_var($listedurl, FILTER_VALIDATE_URL) && $options['airbnb_radio']=='yes') {
-				
-			if(isset($_SERVER['SERVER_ADDR']) && $_SERVER['SERVER_ADDR']!=''){
-				$ip_server = $_SERVER['SERVER_ADDR'];
-			} else {
-				//get url of site.
-				$ip_server = urlencode(get_site_url());
-			}
-			$siteurl = urlencode(get_site_url());
-			$pagenum = 1;
-			
-			//scrapeurl
-			$sitetypelower = "airbnb";
-			$nextpageurl = '';
-			$blockstoinsert='20';
-			
-			$tempurlval = 'https://crawl.ljapps.com/crawlrevs?rip='.$ip_server.'&surl='.$siteurl.'&scrapeurl='.$listedurl.'&stype='.$sitetypelower.'&sfp=pro&nobot=1&nhful='.$nhful.'&locationtype=&scrapequery=&tempbusinessname=&pagenum='.$pagenum.'&nextpageurl='.$nextpageurl.'&blocks='.$blockstoinsert;
-			
-			//echo $tempurlval;
-			//die();
-			
-			$serverresponse='';
-			
-			$args = array(
-				'timeout'     => 120,
-				'sslverify' => false,
-				'headers' => array( 
-					'Content-Type' => ' application/json',
-					'Accept'=> 'application/json'
-				)
-			); 
-			$response = wp_remote_get( $tempurlval, $args );
-			if ( is_array( $response ) && ! is_wp_error( $response ) ) {
-				$headers = $response['headers']; // array of http header lines
-				$serverresponse    = $response['body']; // use the content
-			} else {
-				//must have been an error
-				$results['ack'] ='error';
-				$results['ackmsg'] ='Error 0001a: trouble contacting crawling server with remote_get. Please try again or contact support.'.$response->get_error_message();
-				$results = json_encode($results);
-				echo $results;
-				die();
-			}
-			
-			//print_r($serverresponse);
-			
-		//check for block or timeout
-		//====================
-		if (strpos($serverresponse, "Please wait while your request is being verified") !== false || !isset($serverresponse) || $serverresponse=='' || strpos($serverresponse, "Access denied by Imunify360 bot-protection.") !== false || strpos($serverresponse, "403 Forbidden") !== false) {
-		   //this site is greylisted by imunify360 on cloudways, call backup digital ocean server
-		   $response = wp_remote_get( 'https://ocean.ljapps.com/crawlrevs.php?rip='.$ip_server.'&surl='.$siteurl.'&scrapeurl='.$listedurl.'&stype='.$sitetypelower.'&sfp=pro&nobot=1&nhful='.$nhful.'&locationtype=&scrapequery=&tempbusinessname=&pagenum='.$pagenum.'&nextpageurl='.$nextpageurl, array( 'sslverify' => false, 'timeout' => 60 ) );
-			if ( is_array( $response ) && ! is_wp_error( $response ) ) {
-				$headers = $response['headers']; // array of http header lines
-				$serverresponse    = $response['body']; // use the content
-			}
+		$listedurl = $tempurl;
+		// Manual downloads use iscron=no so the crawl server does not throttle us.
+		$iscron = 'no';
+
+		// Airbnb returns everything in one crawl-server call (up to 48 reviews).
+		$reviewscrawl = $this->wprpfree_getapps_getrevs_page_airbnb( $listedurl, 1, $iscron );
+
+		if ( ! is_array( $reviewscrawl ) || ( isset( $reviewscrawl['ack'] ) && $reviewscrawl['ack'] === 'error' ) ) {
+			$result['ack']    = 'error';
+			$result['ackmsg'] = isset( $reviewscrawl['ackmsg'] ) ? $reviewscrawl['ackmsg'] : __( 'Unable to find any reviews. Please try again or contact support.', 'wp-airbnb-review-slider' );
+			return $result;
 		}
-		//=========================	
-			$serverresponsearray = json_decode($serverresponse, true);
-			
-			//print_r($serverresponsearray );
-			//die();
 
-			if($serverresponse=='' || !is_array($serverresponsearray)){
-				$results['ack'] ='error';
-				$results['ackmsg'] ='Error 0001: trouble contacting crawling server. Please try again or contact support.';
-				$results = json_encode($results);
-				echo $results;
-				die();
-			}
-			//catch limit error
-			if($serverresponsearray['ack']=='error'){
-				$results['ack'] ='error';
-				$results['ackmsg'] ='Error 0002: '.$serverresponsearray['ackmessage'];
-				$results = json_encode($results);
-				echo $results;
-				die();
-			}
-			if(!isset($serverresponsearray['result']) || !is_array($serverresponsearray['result'])){
-				$results['ack'] ='error';
-				$results['ackmsg'] ='Error 0002b: trouble finding reviews. Contact support with this error code and the search terms or place id you are using.';
-				$results = json_encode($results);
-				echo $results;
-				die();
-			}
-			//catch error
-			if($serverresponsearray['result']['ack']=='error'){
-				$results['ack'] ='error';
-				$results['ackmsg'] ='Error 0003: '.$serverresponsearray['ackmessage'].' : '.$serverresponsearray['result']['ackmsg'];
-				$results = json_encode($results);
-				echo $results;
-				die();
-			}
-			//made it this far assume we have reviews.
-			$crawlerresultarray = $serverresponsearray['result'];
-			
-			//print_r($crawlerresultarray);
-			//die();
+		$all_reviews  = ( ! empty( $reviewscrawl['reviews'] ) && is_array( $reviewscrawl['reviews'] ) ) ? $reviewscrawl['reviews'] : array();
+		$source_avg   = isset( $reviewscrawl['avg'] ) ? $reviewscrawl['avg'] : '';
+		$source_total = isset( $reviewscrawl['total'] ) ? $reviewscrawl['total'] : '';
 
-			//need totals and avg for this place $getreviewsarray['total']
-			$result['total']='';
-			$result['avg']='';
-			if(isset($crawlerresultarray['avg'])){
-				$result['avg']=$crawlerresultarray['avg'];
+		if ( empty( $all_reviews ) ) {
+			$result['ack']    = 'error';
+			$result['ackmsg'] = __( 'Unable to find any reviews. Please try again or contact support.', 'wp-airbnb-review-slider' );
+			return $result;
+		}
+
+		$result['avg']   = $source_avg;
+		$result['total'] = $source_total;
+
+		$reviews = array();
+		foreach ( $all_reviews as $review ) {
+			$rtext         = isset( $review['review_text'] ) ? $review['review_text'] : '';
+			$review_length = str_word_count( $rtext );
+			$unixtimestamp = $this->myStrtotime( isset( $review['updated'] ) ? $review['updated'] : '' );
+			if ( ! $unixtimestamp ) {
+				$unixtimestamp = time();
 			}
-			if(isset($crawlerresultarray['total'])){
-				$result['total']=$crawlerresultarray['total'];
+			$timestamp = date( 'Y-m-d H:i:s', $unixtimestamp );
+
+			// Dedupe by name + length (+ pageid) so re-downloads don't duplicate rows.
+			if ( $pageid !== '' ) {
+				$checkrow = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT id FROM {$table_name} WHERE reviewer_name = %s AND review_length = %d AND pageid = %s",
+						$review['reviewer_name'],
+						$review_length,
+						$pageid
+					)
+				);
+			} else {
+				$checkrow = $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT id FROM {$table_name} WHERE reviewer_name = %s AND rating = %d",
+						$review['reviewer_name'],
+						(int) $review['rating']
+					)
+				);
 			}
-			
-			//pass back URL used
-			if(isset($crawlerresultarray['callurl'])){
-				$result['callurl']=$crawlerresultarray['callurl'];
+
+			if ( ! empty( $checkrow ) ) {
+				continue;
 			}
-			//pass back next URL used
-			if(isset($crawlerresultarray['nextpageurl'])){
-				$result['nextpageurl']=$crawlerresultarray['nextpageurl'];
+
+			// Re-hide previously hidden reviews on re-download.
+			$airbnbhidden      = get_option( 'wpairbnb_hidden_reviews' );
+			$airbnbhiddenarray = $airbnbhidden ? json_decode( $airbnbhidden, true ) : array( '' );
+			if ( ! is_array( $airbnbhiddenarray ) ) {
+				$airbnbhiddenarray = array( '' );
 			}
-			
-			$x=0;
-			if(isset($crawlerresultarray['reviews'])){
-			$crawlerreviewsarray = $crawlerresultarray['reviews'];
-			}
-			
-			foreach ($crawlerreviewsarray as $review) {
-				
-				$tempownerres='';
-				if(isset($review['owner_response']) && $review['owner_response']!=''){
-					$tempownerres = $review['owner_response'];
-				}
-				$templocation ='';
-				if(isset($review['location']) && $review['location']!=''){
-					$templocation = $review['location'];
-				}	
-				$tempmediaurlsarrayjson ='';
-				if(isset($review['mediaurlsarrayjson']) && $review['mediaurlsarrayjson']!=''){
-					$tempmediaurlsarrayjson = $review['mediaurlsarrayjson'];
-				}
-				
-				$tempimg = "";	
-				if($review['userimage']!=""){
-					$tempimg = $review['userimage'];
-				}
-				
-				$fromurl = "";	
-				if($review['from_url_review']!=""){
-					$fromurl = $review['from_url_review'];
-				}
-				
-								$review_length = str_word_count($review['review_text']);
-								$timestamp = $this->myStrtotime($review['date']);
-								$unixtimestamp = $timestamp;
-								$timestamp = date("Y-m-d H:i:s", $timestamp);
-								//check option to see if this one has been hidden
-								//pull array from options table of airbnb hidden
-								$airbnbhidden = get_option( 'wpairbnb_hidden_reviews' );
-								if(!$airbnbhidden){
-									$airbnbhiddenarray = array('');
-								} else {
-									$airbnbhiddenarray = json_decode($airbnbhidden,true);
-								}
-								$this_airbnb_val = trim($review['reviewer_name'])."-".strtotime($timestamp)."-".$review_length."-Airbnb-".$review['rating'];
-								if (in_array($this_airbnb_val, $airbnbhiddenarray)){
-									$hideme = 'yes';
-								} else {
-									$hideme = 'no';
-								}
-								
-				
-				$reviewindb = 'no';
-								$timestamp = $this->myStrtotime($review['date']);
-								$unixtimestamp = $timestamp;
-								$timestamp = date("Y-m-d H:i:s", $timestamp);
-								
-				$checkrow = $wpdb->get_var( "SELECT id FROM ".$table_name." WHERE rating = '".$review['rating']."' AND reviewer_name = '".trim($review['reviewer_name'])."' " );
-				if( empty( $checkrow ) ){
-						$reviewindb = 'no';
-				} else {
-						$reviewindb = 'yes';
-				}
-				if( $reviewindb == 'no' )
-				{
-					
-				$reviewsarray[] = [
-				 'reviewer_name' => trim($review['reviewer_name']),
-				 'pagename' => "",
-				 'userpic' => $tempimg,
-				 'rating' => $review['rating'],
-				'created_time' => $timestamp,
+			$this_airbnb_val = trim( $review['reviewer_name'] ) . '-' . $unixtimestamp . '-' . $review_length . '-Airbnb-' . (int) $review['rating'];
+			$hideme           = in_array( $this_airbnb_val, $airbnbhiddenarray, true ) ? 'yes' : '';
+
+			// Defense in depth: re-sanitize immediately before the DB write.
+			$reviews[] = array(
+				'pageid'             => $pageid,
+				'pagename'           => trim( $pagename ),
+				'reviewer_name'      => sanitize_text_field( $review['reviewer_name'] ),
+				'userpic'            => esc_url_raw( isset( $review['userpic'] ) ? $review['userpic'] : '' ),
+				'rating'             => (int) $review['rating'],
+				'created_time'       => $timestamp,
 				'created_time_stamp' => $unixtimestamp,
-				 'review_text' => $review['review_text'],
-				 'hide' => "",
-				 'review_length' => $review_length,
-				'type' => 'Airbnb'
-				 ];
-								
-				}
-				
-				$x++;
-			}
-
-			//just crawling once for zillow and airbnb
-			if($sitetypelower=="airbnb" ){
-				$result['stoploop']='stop';
-			}
-
-		$result['reviews'] = $reviewsarray;
+				'review_text'        => sanitize_textarea_field( trim( $rtext ) ),
+				'hide'               => $hideme,
+				'review_length'      => $review_length,
+				'type'               => 'Airbnb',
+				'from_url'           => esc_url_raw( $listedurl ),
+				'mediaurlsarrayjson' => isset( $review['mediaurlsarrayjson'] ) ? $review['mediaurlsarrayjson'] : '',
+			);
 		}
 
-	
-				//add all new airbnb reviews to db
-				$insertnum=0;
-				foreach ( $reviewsarray as $stat ){
-					$insertnum = $wpdb->insert( $table_name, $stat );
-				}
-				//reviews added to db
-				if($insertnum>0){
-					$errormsg = $errormsg . ' Airbnb reviews downloaded. They should now be on the Review List. Use the Template tab to display them on your site.';
-					$this->errormsg = $errormsg;
-				} else {
-					$errormsg = $errormsg . ' Unable to find any new reviews.';
-					$this->errormsg = $errormsg;
-				}
-			
-
-		
-		if($errormsg !=''){
-			//echo $errormsg;
+		foreach ( $reviews as $stat ) {
+			$insertnum    = $wpdb->insert( $table_name, $stat );
+			$totalinsert += (int) $insertnum;
 		}
-		
-		//return $result;
 
+		// Persist source avg/total for badges.
+		if ( $pageid !== '' ) {
+			$this->updatetotalavgreviews( 'Airbnb', $pageid, $source_avg, $source_total, $pagename );
+
+			$crawls = $this->wpairbnb_get_crawls();
+			if ( ! isset( $crawls[ $pageid ] ) ) {
+				$crawls[ $pageid ] = array(
+					'pageid'       => $pageid,
+					'businessname' => $pagename,
+					'url'          => $listedurl,
+				);
+			}
+			$crawls[ $pageid ]['avg']           = $source_avg;
+			$crawls[ $pageid ]['total']         = $source_total;
+			$crawls[ $pageid ]['businessname']  = $pagename;
+			$crawls[ $pageid ]['url']           = $listedurl;
+			$crawls[ $pageid ]['last_download'] = time();
+			$this->wpairbnb_save_crawls( $crawls );
+		}
+
+		$numreturned      = count( $all_reviews );
+		$result['ackmsg'] = sprintf(
+			/* translators: 1: reviews found, 2: new reviews inserted */
+			__( '%1$d reviews found. %2$d new reviews downloaded. Check the Review List page.', 'wp-airbnb-review-slider' ),
+			$numreturned,
+			$totalinsert
+		);
+		$this->errormsg = $result['ackmsg'];
+
+		return $result;
+	}
+
+	/**
+	 * Store source avg/total for badges (option + averages table).
+	 *
+	 * @param string $type     Review type.
+	 * @param string $pageid   Page id.
+	 * @param string $avg      Source average from crawler.
+	 * @param string $total    Source total from crawler.
+	 * @param string $pagename Business name.
+	 */
+	public function updatetotalavgreviews( $type, $pageid, $avg, $total, $pagename = '' ) {
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'wpairbnb_reviews';
+		$avg        = str_replace( ',', '.', (string) $avg );
+		$option     = 'wpairbnb_total_avg_reviews';
+
+		$wppro_total_avg_reviews_array = get_option( $option );
+		if ( $wppro_total_avg_reviews_array ) {
+			$wppro_total_avg_reviews_array = json_decode( $wppro_total_avg_reviews_array, true );
+		}
+		if ( ! is_array( $wppro_total_avg_reviews_array ) ) {
+			$wppro_total_avg_reviews_array = array();
+		}
+
+		$ratingsarray = array();
+		$abreviews    = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT rating, type FROM {$table_name} WHERE hide != %s AND pageid = %s",
+				'yes',
+				$pageid
+			)
+		);
+		$pagetype = $type;
+		foreach ( $abreviews as $abreview ) {
+			if ( $abreview->rating > 0 ) {
+				$ratingsarray[] = (float) $abreview->rating;
+			}
+			if ( ! empty( $abreview->type ) ) {
+				$pagetype = $abreview->type;
+			}
+		}
+
+		$avgdb   = 0;
+		$totaldb = 0;
+		if ( count( $ratingsarray ) > 0 ) {
+			$avgdb   = round( array_sum( $ratingsarray ) / count( $ratingsarray ), 3 );
+			$totaldb = count( $ratingsarray );
+		}
+
+		if ( ! isset( $wppro_total_avg_reviews_array[ $pageid ] ) ) {
+			$wppro_total_avg_reviews_array[ $pageid ] = array();
+		}
+		$wppro_total_avg_reviews_array[ $pageid ]['total_indb'] = $totaldb;
+		$wppro_total_avg_reviews_array[ $pageid ]['avg_indb']   = $avgdb;
+		if ( floatval( $avg ) > 0 ) {
+			$wppro_total_avg_reviews_array[ $pageid ]['avg'] = round( floatval( $avg ), 3 );
+		}
+		if ( intval( $total ) > 0 ) {
+			$wppro_total_avg_reviews_array[ $pageid ]['total'] = intval( $total );
+		}
+
+		update_option( $option, wp_json_encode( $wppro_total_avg_reviews_array, JSON_FORCE_OBJECT ) );
+
+		$valuearray = array(
+			'btp_id'     => $pageid,
+			'btp_name'   => $pagename,
+			'pagetype'   => $pagetype,
+			'total'      => isset( $wppro_total_avg_reviews_array[ $pageid ]['total'] ) ? $wppro_total_avg_reviews_array[ $pageid ]['total'] : '',
+			'total_indb' => $totaldb,
+			'avg'        => isset( $wppro_total_avg_reviews_array[ $pageid ]['avg'] ) ? $wppro_total_avg_reviews_array[ $pageid ]['avg'] : '',
+			'avg_indb'   => $avgdb,
+			'numr1'      => '',
+			'numr2'      => '',
+			'numr3'      => '',
+			'numr4'      => '',
+			'numr5'      => '',
+		);
+		$this->updatetotalavgreviewstableinsert( 'page', $valuearray );
+	}
+
+	/**
+	 * Insert/replace a row in wpairbnb_total_averages.
+	 *
+	 * @param string $btp_type   page|template|badge.
+	 * @param array  $valuearray Row values.
+	 */
+	public function updatetotalavgreviewstableinsert( $btp_type, $valuearray ) {
+		global $wpdb;
+		$table_name_totalavg = $wpdb->prefix . 'wpairbnb_total_averages';
+		$data                = array(
+			'btp_id'     => isset( $valuearray['btp_id'] ) ? $valuearray['btp_id'] : '',
+			'btp_name'   => isset( $valuearray['btp_name'] ) ? $valuearray['btp_name'] : '',
+			'btp_type'   => $btp_type,
+			'pagetype'   => isset( $valuearray['pagetype'] ) ? $valuearray['pagetype'] : '',
+			'total_indb' => isset( $valuearray['total_indb'] ) ? (string) $valuearray['total_indb'] : '',
+			'total'      => isset( $valuearray['total'] ) ? (string) $valuearray['total'] : '',
+			'avg_indb'   => isset( $valuearray['avg_indb'] ) ? (string) $valuearray['avg_indb'] : '',
+			'avg'        => isset( $valuearray['avg'] ) ? (string) $valuearray['avg'] : '',
+			'numr1'      => isset( $valuearray['numr1'] ) ? (string) $valuearray['numr1'] : '',
+			'numr2'      => isset( $valuearray['numr2'] ) ? (string) $valuearray['numr2'] : '',
+			'numr3'      => isset( $valuearray['numr3'] ) ? (string) $valuearray['numr3'] : '',
+			'numr4'      => isset( $valuearray['numr4'] ) ? (string) $valuearray['numr4'] : '',
+			'numr5'      => isset( $valuearray['numr5'] ) ? (string) $valuearray['numr5'] : '',
+		);
+		$format = array( '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' );
+		$wpdb->replace( $table_name_totalavg, $data, $format );
 	}
 	 
 	 
@@ -2048,6 +2604,247 @@ class WP_Airbnb_Review_Admin {
 		);
 		
 		return in_array($parsed_url['host'], $allowed_hosts);
+	}
+
+	/**
+	 * Small helper: allow hex or rgb(a) colors, otherwise empty.
+	 *
+	 * @access  private
+	 * @since   1.0.0
+	 * @param   string $color Raw color value.
+	 * @return  string
+	 */
+	private function wpairbnb_sanitize_css_color( $color ) {
+		$color = trim( (string) $color );
+		if ( $color === '' ) {
+			return '';
+		}
+		if ( preg_match( '/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/', $color ) ) {
+			return $color;
+		}
+		if ( preg_match( '/^rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*(,\s*[\d.]+\s*)?\)$/i', $color ) ) {
+			return $color;
+		}
+		return '';
+	}
+
+	/**
+	 * Ajax: return the rendered template HTML for the live preview.
+	 * @access  public
+	 * @since   1.0.0
+	 * @return  void
+	 */
+	public function wpairbnb_previewtemplate_ajax() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+			return;
+		}
+		check_ajax_referer( 'randomnoncestring', 'wpairbnb_nonce' );
+
+		$tid         = isset( $_POST['tid'] ) ? absint( $_POST['tid'] ) : 0;
+		$returnarray = $this->wpairbnb_previewtemplate_ajax_get( $tid );
+		echo wp_json_encode( $returnarray );
+		die();
+	}
+
+	/**
+	 * Build preview HTML for a template id using the public shortcode renderer.
+	 *
+	 * @access  public
+	 * @since   1.0.0
+	 * @param   int $tid Template id.
+	 * @return  array
+	 */
+	public function wpairbnb_previewtemplate_ajax_get( $tid ) {
+		$atts = array( 'tid' => absint( $tid ) );
+		require_once plugin_dir_path( __DIR__ ) . 'public/class-wp-airbnb-review-slider-public.php';
+		$plugin_public_class = new WP_Airbnb_Review_Public( $this->_token, $this->version );
+		$templatehtml         = $plugin_public_class->wpairbnb_usetemplate_func( $atts, null );
+
+		return array(
+			'tid'          => absint( $tid ),
+			'ack'          => 'success',
+			'templatehtml' => $templatehtml,
+		);
+	}
+
+	/**
+	 * Ajax: save (insert/update) a review template then return its preview HTML.
+	 *
+	 * Mirrors the page-POST save logic in admin/partials/templates_posts.php so
+	 * the live preview reflects exactly what will be stored.
+	 *
+	 * @access  public
+	 * @since   1.0.0
+	 * @return  void
+	 */
+	public function wpairbnb_savetemplate_ajax() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => 'Insufficient permissions' ) );
+			return;
+		}
+		check_ajax_referer( 'randomnoncestring', 'wpairbnb_nonce' );
+
+		$formdata  = isset( $_POST['data'] ) ? stripslashes( $_POST['data'] ) : '';
+		$formarray = json_decode( $formdata, true );
+		if ( ! is_array( $formarray ) ) {
+			echo wp_json_encode( array( 'ack' => 'error', 'ackmessage' => 'Invalid form data.' ) );
+			die();
+		}
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'wpairbnb_post_templates';
+
+		$get = function ( $key, $default = '' ) use ( $formarray ) {
+			return isset( $formarray[ $key ] ) ? $formarray[ $key ] : $default;
+		};
+
+		$t_id             = sanitize_text_field( $get( 'edittid' ) );
+		$title            = sanitize_text_field( $get( 'wpairbnb_template_title' ) );
+		$template_type    = sanitize_text_field( $get( 'wpairbnb_template_type', 'post' ) );
+		$style            = sanitize_text_field( $get( 'wprevpro_template_style', '1' ) );
+		$display_num      = sanitize_text_field( $get( 'wpairbnb_t_display_num', '3' ) );
+		$display_num_rows = sanitize_text_field( $get( 'wpairbnb_t_display_num_rows', '1' ) );
+		$display_order    = sanitize_text_field( $get( 'wpairbnb_t_display_order', 'newest' ) );
+		$hide_no_text     = sanitize_text_field( $get( 'wpairbnb_t_hidenotext', 'no' ) );
+		$template_css     = sanitize_textarea_field( $get( 'wpairbnb_template_css' ) );
+		$createslider     = sanitize_text_field( $get( 'wpairbnb_t_createslider', 'no' ) );
+		$numslides        = sanitize_text_field( $get( 'wpairbnb_t_numslides', '3' ) );
+		$read_more        = sanitize_text_field( $get( 'wprevpro_t_read_more', 'no' ) );
+		$read_more_text   = sanitize_text_field( $get( 'wprevpro_t_read_more_text', 'read more' ) );
+		$read_more_num    = absint( $get( 'wprevpro_t_read_more_num', '30' ) );
+		$min_rating       = sanitize_text_field( $get( 'wpairbnb_t_min_rating', '1' ) );
+		$review_same_hgt  = sanitize_text_field( $get( 'wpairbnb_t_review_same_height', 'no' ) );
+		$filtersource     = sanitize_text_field( $get( 'wpairbnb_t_filtersource' ) );
+
+		// template misc (style + slider + badge, stored as JSON the public renderer reads)
+		$templatemiscarray = array();
+		$templatemiscarray['showstars'] = sanitize_text_field( $get( 'wprevpro_template_misc_showstars', 'yes' ) );
+		$templatemiscarray['showdate']  = sanitize_text_field( $get( 'wprevpro_template_misc_showdate', 'yes' ) );
+		$templatemiscarray['bgcolor1']  = $this->wpairbnb_sanitize_css_color( $get( 'wprevpro_template_misc_bgcolor1' ) );
+		$templatemiscarray['bgcolor2']  = $this->wpairbnb_sanitize_css_color( $get( 'wprevpro_template_misc_bgcolor2' ) );
+		$templatemiscarray['tcolor1']   = $this->wpairbnb_sanitize_css_color( $get( 'wprevpro_template_misc_tcolor1' ) );
+		$templatemiscarray['tcolor2']   = $this->wpairbnb_sanitize_css_color( $get( 'wprevpro_template_misc_tcolor2' ) );
+		$templatemiscarray['tcolor3']   = $this->wpairbnb_sanitize_css_color( $get( 'wprevpro_template_misc_tcolor3' ) );
+		$templatemiscarray['bradius']   = sanitize_text_field( $get( 'wprevpro_template_misc_bradius', '0' ) );
+
+		// Style-tab options.
+		$templatemiscarray['verified']       = sanitize_text_field( $get( 'wprevpro_template_misc_verified', 'no' ) );
+		$templatemiscarray['lastnameformat'] = sanitize_text_field( $get( 'wprevpro_template_misc_lastname', 'show' ) );
+		$templatemiscarray['avataropt']      = sanitize_text_field( $get( 'wprevpro_template_misc_avataropt', 'show' ) );
+		$templatemiscarray['showicon']       = sanitize_text_field( $get( 'wprevpro_template_misc_showicon', 'lin' ) );
+		$ajax_tfont1 = absint( $get( 'wprevpro_template_misc_tfont1', 0 ) );
+		$ajax_tfont2 = absint( $get( 'wprevpro_template_misc_tfont2', 0 ) );
+		$templatemiscarray['tfont1'] = $ajax_tfont1 > 0 ? (string) $ajax_tfont1 : '';
+		$templatemiscarray['tfont2'] = $ajax_tfont2 > 0 ? (string) $ajax_tfont2 : '';
+
+		// General-tab options (read more + reviews same height).
+		$templatemiscarray['review_same_height'] = $review_same_hgt;
+		$templatemiscarray['read_more_num']      = (string) $read_more_num;
+		$templatemiscarray['read_more_color']    = $this->wpairbnb_sanitize_css_color( $get( 'wprevpro_t_read_more_color' ) );
+
+		// Filter source lives in misc (the public renderer reads template_misc['filtersource']).
+		$templatemiscarray['filtersource'] = $filtersource;
+
+		// Badge options.
+		$templatemiscarray['blocation'] = sanitize_text_field( $get( 'wpairbnb_t_blocation' ) );
+		$templatemiscarray['bname']     = sanitize_text_field( $get( 'wpairbnb_t_bname' ) );
+		$templatemiscarray['bnameurl']  = esc_url_raw( $get( 'wpairbnb_t_bnameurl' ) );
+		$templatemiscarray['bimgurl']   = esc_url_raw( $get( 'wpairbnb_t_bimgurl' ) );
+		$templatemiscarray['bshape']    = sanitize_text_field( $get( 'wpairbnb_t_bshape' ) );
+		$templatemiscarray['bimgsize']  = sanitize_text_field( $get( 'wpairbnb_t_bimgsize', '50' ) );
+		$templatemiscarray['bbtnurl']   = esc_url_raw( $get( 'wpairbnb_t_bbtnurl' ) );
+		$templatemiscarray['bbradius']  = sanitize_text_field( $get( 'wpairbnb_t_bbradius', '0' ) );
+		$templatemiscarray['bbwidth']   = sanitize_text_field( $get( 'wpairbnb_t_bbwidth', '0' ) );
+		$templatemiscarray['bbtncolor'] = $this->wpairbnb_sanitize_css_color( $get( 'wpairbnb_t_bbtncolor', '#FF5A5F' ) );
+		$templatemiscarray['bbkcolor']  = $this->wpairbnb_sanitize_css_color( $get( 'wpairbnb_t_bbkcolor', '#ffffff' ) );
+		$templatemiscarray['bbcolor']   = $this->wpairbnb_sanitize_css_color( $get( 'wpairbnb_t_bbcolor', '#eeeeee' ) );
+		$templatemiscarray['bdropsh']   = sanitize_text_field( $get( 'wpairbnb_t_bdropsh' ) );
+		$templatemiscarray['bcenter']   = sanitize_text_field( $get( 'wpairbnb_t_bcenter' ) );
+		$templatemiscarray['bhname']    = sanitize_text_field( $get( 'wpairbnb_t_bhname' ) );
+		$templatemiscarray['bhphoto']   = sanitize_text_field( $get( 'wpairbnb_t_bhphoto' ) );
+		$templatemiscarray['bhbased']   = sanitize_text_field( $get( 'wpairbnb_t_bhbased' ) );
+		$templatemiscarray['bhbtn']     = sanitize_text_field( $get( 'wpairbnb_t_bhbtn' ) );
+		$templatemiscarray['bhpow']     = sanitize_text_field( $get( 'wpairbnb_t_bhpow' ) );
+		$templatemiscarray['bhreviews'] = sanitize_text_field( $get( 'wpairbnb_t_bhreviews' ) );
+		$templatemiscarray['bobasedon'] = sanitize_text_field( $get( 'wpairbnb_t_bobasedon' ) );
+		$templatemiscarray['borevus']   = sanitize_text_field( $get( 'wpairbnb_t_borevus' ) );
+
+		$templatemiscjson = wp_json_encode( $templatemiscarray );
+		$timenow          = time();
+
+		$data = array(
+			'title'              => $title,
+			'template_type'      => $template_type,
+			'style'              => $style,
+			'created_time_stamp' => $timenow,
+			'display_num'        => $display_num,
+			'display_num_rows'   => $display_num_rows,
+			'display_order'      => $display_order,
+			'hide_no_text'       => $hide_no_text,
+			'template_css'       => $template_css,
+			'min_rating'         => $min_rating,
+			'min_words'          => '',
+			'max_words'          => '',
+			'rtype'              => '["airbnb"]',
+			'rpage'              => $filtersource,
+			'createslider'       => $createslider,
+			'numslides'          => $numslides,
+			'sliderautoplay'     => '',
+			'sliderdirection'    => '',
+			'sliderarrows'       => '',
+			'sliderdots'         => '',
+			'sliderdelay'        => '',
+			'sliderheight'       => $review_same_hgt,
+			'review_same_height' => $review_same_hgt,
+			'showreviewsbyid'    => '',
+			'template_misc'      => $templatemiscjson,
+			'read_more'          => $read_more,
+			'read_more_num'      => $read_more_num,
+			'read_more_text'     => $read_more_text,
+		);
+		$format = array(
+			'%s', '%s', '%d', '%d', '%d', '%d', '%s', '%s', '%s', '%d',
+			'%d', '%d', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s',
+			'%d', '%s', '%s', '%s', '%s', '%s', '%d', '%s',
+		);
+
+		$returnarray = array(
+			'iu'         => '',
+			'ack'        => '',
+			'ackmessage' => '',
+			't_id'       => '',
+		);
+
+		if ( $t_id === '' ) {
+			$returnarray['iu'] = 'insert';
+			$inserttemplate    = $wpdb->insert( $table_name, $data, $format );
+			$t_id              = $wpdb->insert_id;
+			if ( ! $inserttemplate ) {
+				$returnarray['ack']        = 'error';
+				$returnarray['ackmessage'] = __( 'Unable to update. Try refreshing the page.', 'wp-airbnb-review-slider' );
+			} else {
+				$returnarray['ack']        = 'success';
+				$returnarray['ackmessage'] = __( 'Template Saved!', 'wp-airbnb-review-slider' );
+			}
+		} else {
+			$returnarray['iu'] = 'update';
+			$updatetempquery   = $wpdb->update( $table_name, $data, array( 'id' => absint( $t_id ) ), $format, array( '%d' ) );
+			if ( false === $updatetempquery ) {
+				$returnarray['ack']        = 'error';
+				$returnarray['ackmessage'] = __( 'Unable to update. Try refreshing the page.', 'wp-airbnb-review-slider' );
+			} else {
+				$returnarray['ack']        = 'success';
+				$returnarray['ackmessage'] = __( 'Template Updated!', 'wp-airbnb-review-slider' );
+			}
+		}
+
+		$returnarray['t_id']         = absint( $t_id );
+		$returnpreview               = $this->wpairbnb_previewtemplate_ajax_get( absint( $t_id ) );
+		$returnarray['templatehtml'] = $returnpreview['templatehtml'];
+
+		echo wp_json_encode( $returnarray );
+		die();
 	}
 
 }

@@ -87,24 +87,29 @@
 				$rtypefilter = $rtypefilter.")";
 			}
 		}
-		//rpage filter-----
-		$rpagefilter = "";
-		if($currentform[0]->rpage!=""){
-			$rpagearray = json_decode($currentform[0]->rpage);
-			if(is_array($rpagearray)){
-			$rpagearray = array_filter($rpagearray);
-			$rpagearray = array_values($rpagearray);
-			if(count($rpagearray)>0){
-				for ($x = 0; $x < count($rpagearray); $x++) {
-					
-					if($x==0){
-						$rpagefilter = "AND (pageid = '".$rpagearray[$x]."'";
-					} else {
-						$rpagefilter = $rpagefilter." OR pageid = '".$rpagearray[$x]."'";
-					}
-				}
-				$rpagefilter = $rpagefilter.")";
+		//source (rpage) filter — single pageid, safely bound via $wpdb->prepare below.
+		//Backward compatible: legacy JSON-array values use the first pageid, and an
+		//empty value falls back to the last-added source (or the newest review).
+		$filtersource = isset($currentform[0]->rpage) ? trim($currentform[0]->rpage) : "";
+		if($filtersource!=""){
+			$decodedsource = json_decode($filtersource, true);
+			if(is_array($decodedsource)){
+				$decodedsource = array_values(array_filter($decodedsource));
+				$filtersource = isset($decodedsource[0]) ? $decodedsource[0] : "";
 			}
+		}
+		if($filtersource==""){
+			$crawlsraw = get_option('wprev_airbnb_crawls');
+			$crawls = $crawlsraw ? json_decode($crawlsraw, true) : array();
+			if(is_array($crawls) && count($crawls)>0){
+				$crawlkeys = array_keys($crawls);
+				$filtersource = (string) end($crawlkeys);
+			}
+			if($filtersource==""){
+				$newestpageid = $wpdb->get_var("SELECT pageid FROM ".$table_name." WHERE pageid != '' ORDER BY created_time_stamp DESC LIMIT 1");
+				if($newestpageid){
+					$filtersource = $newestpageid;
+				}
 			}
 		}
 
@@ -136,11 +141,17 @@
 			$query = $query.")";
 			$totalreviews = $wpdb->get_results($query);
 		} else {
+			$sourcefilter = "";
+			$prepareargs = array( "0", $min_words, $max_words, $min_rating, "yes" );
+			if($filtersource!=""){
+				$sourcefilter = " AND pageid = %s";
+				$prepareargs[] = $filtersource;
+			}
 			$totalreviews = $wpdb->get_results(
 				$wpdb->prepare("SELECT * FROM ".$table_name."
-				WHERE id>%d AND review_length >= %d AND review_length <= %d AND rating >= %d AND hide != %s ".$rtypefilter." ".$rpagefilter."
+				WHERE id>%d AND review_length >= %d AND review_length <= %d AND rating >= %d AND hide != %s ".$rtypefilter.$sourcefilter."
 				ORDER BY ".$sorttable." ".$sortdir." 
-				LIMIT ".$tablelimit." ", "0","$min_words","$max_words","$min_rating","yes")
+				LIMIT ".$tablelimit." ", $prepareargs)
 			);
 		}
 		//echo $wpdb->last_query ;
@@ -159,6 +170,17 @@
 		//}
 		//loop through each chunk
 		//print_r($totalreviewschunked);
+
+		//badge: open phase (style + outer wrap + left/above badge, no-op if Location is not set)
+		$template_misc_array = json_decode($currentform[0]->template_misc, true);
+		if(!is_array($template_misc_array)){
+			$template_misc_array = array();
+		}
+		if ( isset( $template_misc_array['filtersource'] ) && $template_misc_array['filtersource'] !== '' ) {
+			$filtersource = $template_misc_array['filtersource'];
+		}
+		$wpairbnb_badge_phase = 'open';
+		include plugin_dir_path( __FILE__ ) . 'wpairbnb_badge_render.php';
 		
 		//if making slide show then add it here
 		if($currentform[0]->createslider == "yes"){
@@ -304,9 +326,13 @@
 								".$slidedots."
 							});
 						});
-						</script>";
-		}
-	 
+					</script>";
+	}
+
+		//badge: close phase (right/below badge + close outer wrap)
+		$wpairbnb_badge_phase = 'close';
+		include plugin_dir_path( __FILE__ ) . 'wpairbnb_badge_render.php';
+ 
 	}
 }
 ?>

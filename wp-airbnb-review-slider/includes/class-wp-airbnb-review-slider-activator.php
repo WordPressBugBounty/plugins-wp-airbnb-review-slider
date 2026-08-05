@@ -78,6 +78,10 @@ class WP_Airbnb_Review_Activator {
 			review_length int(5) NOT NULL,
 			type varchar(12) DEFAULT '' NOT NULL,
 			userpic varchar(250) DEFAULT '' NOT NULL,
+			userpiclocal varchar(500) DEFAULT '' NOT NULL,
+			from_url varchar(800) DEFAULT '' NOT NULL,
+			mediaurlsarrayjson text NOT NULL,
+			mediathumburlsarrayjson text NOT NULL,
 			UNIQUE KEY id (id),
 			PRIMARY KEY (id)
 		) $charset_collate;";
@@ -110,8 +114,10 @@ class WP_Airbnb_Review_Activator {
 			sliderdots varchar(3) DEFAULT '' NOT NULL,
 			sliderdelay int(2) NOT NULL,
 			sliderheight varchar(3) DEFAULT '' NOT NULL,
+			review_same_height varchar(3) DEFAULT '' NOT NULL,
+			slidermobileview varchar(10) DEFAULT '' NOT NULL,
 			showreviewsbyid varchar(600) DEFAULT '' NOT NULL,
-			template_misc varchar(200) DEFAULT '' NOT NULL,
+			template_misc text NOT NULL,
 			read_more varchar(3) DEFAULT '' NOT NULL,
 			read_more_num int(4) NOT NULL,
 			read_more_text varchar(25) DEFAULT '' NOT NULL,
@@ -120,7 +126,29 @@ class WP_Airbnb_Review_Activator {
 		) $charset_collate;";
 		
 		dbDelta( $sql_template );
-	
+
+		//create totals/averages table used for badge averages
+		$table_name_totalavg = $wpdb->prefix . 'wpairbnb_total_averages';
+		$sql_totalavg = "CREATE TABLE $table_name_totalavg (
+				btp_id varchar(150) DEFAULT '' NOT NULL,
+				btp_name varchar(150) DEFAULT '' NOT NULL,
+				btp_type varchar(10) DEFAULT '' NOT NULL,
+				pagetype varchar(100) DEFAULT '' NOT NULL,
+				pagetypedetails text NOT NULL,
+				total_indb varchar(10) DEFAULT '' NOT NULL,
+				total varchar(10) DEFAULT '' NOT NULL,
+				avg_indb varchar(10) DEFAULT '' NOT NULL,
+				avg varchar(10) DEFAULT '' NOT NULL,
+				numr1 varchar(10) DEFAULT '' NOT NULL,
+				numr2 varchar(10) DEFAULT '' NOT NULL,
+				numr3 varchar(10) DEFAULT '' NOT NULL,
+				numr4 varchar(10) DEFAULT '' NOT NULL,
+				numr5 varchar(10) DEFAULT '' NOT NULL,
+				UNIQUE KEY id (btp_id),
+				PRIMARY KEY (btp_id)
+			) $charset_collate;";
+		dbDelta( $sql_totalavg );
+
 		//add columns to table, just need to update the dbDelta function above, will modify to match.
 		
 		//check for fb app id from free plugin and save it 

@@ -77,11 +77,7 @@
 		});	
 		$( "#wpairbnb_addnewreview_cancel" ).click(function() {
 		  jQuery("#wpairbnb_new_review").hide("slow");
-		  //reload page without taction and tid
-		  setTimeout(function(){ 
-			window.location.href = "?page=wp_airbnb-reviews"; 
-		  }, 500);
-		  
+		  jQuery("#wpairbnb_save_review_msg").html("");
 		});
 		//show form if rid hidden field has a value
 		if(jQuery("#editrid").val()!=""){
@@ -103,27 +99,48 @@
 			
 		}
 		
-		//form validation
-		$("#newreviewform").submit(function(){ 
-
-			  if ($('input[name=wpairbnb_nr_rating]:checked').length) {
-				   // at least one of the radio buttons was checked
-				   //return true; // allow whatever action would normally happen to continue
-				   
-			  } else {
-				   // no radio button was checked
-				   alert("Please select review value.");
-				   return false; // stop whatever action would normally happen
-			  }
-		
-			if(jQuery( "#wpairbnb_nr_name").val()==""){
-				alert("Please enter a name.");
-				$( "#wpairbnb_nr_name" ).focus();
-				return false;
-			} else {
-				return true;
+		//save the edited avatar + date via ajax, no page reload
+		$("#wpairbnb_submitreviewbtn").click(function(){
+			var rid = jQuery("#editrid").val();
+			if(rid==""){
+				return;
 			}
+			var reviewDate = jQuery("#wpairbnb_nr_date").val();
+			if(reviewDate==""){
+				alert("Please enter a review date.");
+				return;
+			}
+			var avatarUrl = jQuery("#wpairbnb_nr_avatar_url").val();
+			var $btn = jQuery(this);
+			var originaltext = $btn.text();
+			$btn.text("Saving...");
+			jQuery("#wpairbnb_save_review_msg").html("");
 
+			jQuery.post(ajaxurl, {
+				action: 'wpairbnb_save_review',
+				wpairbnb_nonce: adminjs_script_vars.wpairbnb_nonce,
+				editrid: rid,
+				avatar_url: avatarUrl,
+				review_date: reviewDate
+			}, function(response){
+				$btn.text(originaltext);
+				if(response && response.success){
+					var $row = jQuery("#"+rid);
+					if(response.data && response.data.userpic){
+						$row.find('.wprev_row_userpic img').attr('src', response.data.userpic);
+					}
+					if(response.data && response.data.date){
+						$row.find('.wprev_row_created_time').text(response.data.date);
+					}
+					jQuery("#wpairbnb_new_review").hide("slow");
+				} else {
+					var message = (response && response.data && response.data.message) ? response.data.message : "Something went wrong. Please try again.";
+					jQuery("#wpairbnb_save_review_msg").html('<p style="color:#ce0606;">'+message+'</p>');
+				}
+			}).fail(function(){
+				$btn.text(originaltext);
+				jQuery("#wpairbnb_save_review_msg").html('<p style="color:#ce0606;">Could not reach the server. Please try again.</p>');
+			});
 		});
 		
 		//ajax for hide or delete btn clicked for a review
@@ -158,17 +175,16 @@
 
 			//show edit form and focus
 			$("#wpairbnb_new_review").show("slow");
+			jQuery("#wpairbnb_save_review_msg").html("");
 			//find values from rowobject and fill in edit form wpairbnb_nr_rating, wpairbnb_nr_text, wpairbnb_nr_name, wpairbnb_nr_avatar_url, wpairbnb_nr_date
 			$("#editrid").val(rid);
 			$("#wpairbnb_nr_name").val(name);
 			$("#wpairbnb_nr_avatar_url").val(wprev_row_userpic);
-			//for radio
+			$("#avatar_preview").attr("src", wprev_row_userpic);
 			$("#wpairbnb_nr_rating").val(wprev_row_rating);
 			$("#wpairbnb_nr_date").val(wprev_row_created_time);
 			
 			$("#wpairbnb_nr_text").val(wprev_row_review_text);
-			
-			//var ratingnum = rowobject.
 			
 
 		
@@ -282,45 +298,60 @@
 					var object = JSON.parse(response);
 				//console.log(object);
 
-				var htmltext;
+				var htmltext = '';
 				var userpic;
 				var editdellink;
 				var hideicon;
-				var url_tempeditbtn;
+				var mediahtml;
+				var trclass;
 				var reviewtext = '';
 				
 					$.each(object, function(index) {
 						if(object[index]){
 						if(object[index].reviewer_name){
 							
-							//userpic
-							userpic="";
-							if(object[index].type=="Facebook"){
-								userpic = '<a href="http://facebook.com/'+object[index].reviewer_id+'" target=_blank><img style="-webkit-user-select: none;width: 50px;" src="https://graph.facebook.com/'+object[index].reviewer_id+'/picture?type=square"></a>';
-								editdellink ='';
-							} else if(object[index].type=="Airbnb"){
-								userpic = '<img style="-webkit-user-select: none;width: 50px;" src="'+object[index].userpic+'">';
-								editdellink ='';
+							//userpic, prefer the locally cached avatar if we have one
+							if(object[index].userpiclocal){
+								userpic = '<img style="-webkit-user-select: none;width: 50px;" src="'+object[index].userpiclocal+'">';
 							} else {
 								userpic = '<img style="-webkit-user-select: none;width: 50px;" src="'+object[index].userpic+'">';
-								editdellink = '<span class="reveditbtn dashicons dashicons-edit"></span><span title="Delete" class="revdelbtn text_red dashicons dashicons-trash"></span>';
 							}
+							editdellink = '<span title="Edit" class="reveditbtn dashicons dashicons-edit"></span> <span title="Delete" class="revdelbtn text_red dashicons dashicons-trash"></span>';
 							//hide link
 							if(object[index].hide!="yes"){
-								hideicon = '<i title="Shown" class="hiderevbtn dashicons dashicons-visibility text_green" aria-hidden="true"></i>';
+								hideicon = '<i title="Shown - click to hide" class="hiderevbtn dashicons dashicons-visibility text_green" aria-hidden="true"></i>';
+								trclass = '';
 							} else {
-								hideicon = '<i title="Hidden" class="hiderevbtn dashicons dashicons-hidden" aria-hidden="true"></i>';
+								hideicon = '<i title="Hidden - click to show" class="hiderevbtn dashicons dashicons-hidden" aria-hidden="true"></i>';
+								trclass = 'hiddenrow';
 							}
 							//stripslashes
 							reviewtext = String(object[index].review_text);
 							reviewtext = reviewtext.replace(/\\'/g,'\'').replace(/\"/g,'"').replace(/\\\\/g,'\\').replace(/\\0/g,'\0');
+
+							//media thumbnails (lity lightbox)
+							mediahtml = '';
+							if(object[index].mediaurlsarrayjson){
+								try {
+									var mediaarr = JSON.parse(object[index].mediaurlsarrayjson);
+									if(Array.isArray(mediaarr) && mediaarr.length>0){
+										mediahtml = '<div class="mediaimgsdiv">';
+										for(var m=0; m<mediaarr.length; m++){
+											if(mediaarr[m]){
+												mediahtml += '<a href="'+mediaarr[m]+'" data-lity target="_blank"><img src="'+mediaarr[m]+'" height="50"></a> ';
+											}
+										}
+										mediahtml += '</div>';
+									}
+								} catch(e){}
+							}
 							
-							htmltext = htmltext + '<tr id="'+object[index].id+'">	\
+							htmltext = htmltext + '<tr id="'+object[index].id+'" class="'+trclass+'">	\
 								<th scope="col" class="manage-column">'+hideicon+' '+editdellink+'</th>	\
-								<th scope="col" class="wprev_row_userpic">'+userpic+'</th>	\
+								<th scope="col" class="wprev_row_userpic manage-column">'+userpic+'</th>	\
 								<th scope="col" class="wprev_row_reviewer_name manage-column">'+object[index].reviewer_name+'</th>	\
 								<th scope="col" class="wprev_row_rating manage-column"><b>'+object[index].rating+'</b></th>	\
-								<th scope="col" class="wprev_row_review_text manage-column">'+reviewtext+'</th>	\
+								<th scope="col" class="wprev_row_review_text manage-column">'+reviewtext+mediahtml+'</th>	\
 								<th scope="col" class="wprev_row_created_time manage-column">'+object[index].created_time+'</th>	\
 								<th scope="col" class="manage-column">'+object[index].review_length+'</th>	\
 								<th scope="col" class="manage-column">'+object[index].pagename+'</th>	\

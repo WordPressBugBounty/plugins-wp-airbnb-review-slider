@@ -240,6 +240,27 @@ div#wpairbnb_new_review {
 .reveditbtn {
     cursor: pointer;
 }
+tr.hiddenrow {
+    opacity: 0.55;
+}
+.mediaimgsdiv {
+    margin-top: 6px;
+}
+.mediaimgsdiv a {
+    display: inline-block;
+    margin: 2px 4px 2px 0;
+}
+.mediaimgsdiv img {
+    border-radius: 3px;
+    vertical-align: middle;
+}
+.avatar_images_list img.rlimg {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    vertical-align: middle;
+}
 /*-----------template post page-------------*/
 div#wpairbnb_new_template {
     border: 1px solid #e5e5e5;
@@ -372,24 +393,35 @@ input#airbnb_business_url {
 .wrap.wp_airbnb-settings select {
     padding: 0 24px 0 8px;
 }
-#wp_rev_maindiv .button,
-#wp_rev_maindiv .button-secondary,
-#wp_rev_maindiv a.button,
+#wp_rev_maindiv .button:not(.wp-color-result),
+#wp_rev_maindiv .button-secondary:not(.wp-color-result),
+#wp_rev_maindiv a.button:not(.wp-color-result),
 #wp_rev_maindiv input.button,
-.wrap.wp_airbnb-settings .button,
-.wrap.wp_airbnb-settings .button-secondary,
-.wrap.wp_airbnb-settings a.button,
+.wrap.wp_airbnb-settings .button:not(.wp-color-result),
+.wrap.wp_airbnb-settings .button-secondary:not(.wp-color-result),
+.wrap.wp_airbnb-settings a.button:not(.wp-color-result),
 .wrap.wp_airbnb-settings input.button {
     border-color: #ccc;
     background: #f6f7f7;
     color: #505050;
-    height: 28px;
-    min-height: 28px;
-    max-height: 28px;
-    padding-top: 0;
-    padding-bottom: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    min-height: 30px;
+    padding: 0 12px;
     box-sizing: border-box;
-    line-height: 1;
+    line-height: 1.2;
+    vertical-align: middle;
+    text-decoration: none;
+}
+/* Do not restyle WP color picker buttons — flex/padding breaks the swatch + label layout */
+#wp_rev_maindiv .wp-picker-container .wp-color-result.button,
+#wp_rev_maindiv .wp-picker-container a.wp-color-result.button,
+.wrap.wp_airbnb-settings .wp-picker-container .wp-color-result.button,
+.wrap.wp_airbnb-settings .wp-picker-container a.wp-color-result.button,
+#wpairbnb_new_template .wp-picker-container .wp-color-result.button {
+    display: inline-block;
 }
 #wp_rev_maindiv img.wprev_headerimg {
     width: 194px;
@@ -488,3 +520,170 @@ input#airbnb_business_url {
     flex-wrap: wrap;
     gap: 6px;
 }
+
+/*-----------template post page (Style / General / Filter / Badge tabs)-------------*/
+.mt2 {
+    margin-top: -4px;
+}
+#newtemplateform th {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+div#wpairbnb_new_template {
+    border: 1px solid #e5e5e5;
+    -webkit-box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+    padding: 10px;
+	display: none;
+}
+.wprevpre_temp_label_row {
+    min-height: 35px;
+}
+.wp-picker-container.wp-picker-active {
+    z-index: 999 !important;
+    position: absolute !important;
+}
+div#wprevpro_template_preview {
+    margin-left: -10px;
+    min-height: 120px;
+}
+#wprevpro_template_preview .wprevpro_t1_outer_div,
+#wprevpro_template_preview .wprevpro_t6_outer_div {
+    max-width: 360px;
+}
+#wprevpro_template_preview .w3_wprs-col {
+    float: none;
+    width: 100%;
+}
+
+/* clearfix the floated w3 grid so the preview column doesn't collapse */
+#wpairbnb_new_template .w3_wprs-row:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+#wpairbnb_new_template .settingstable td { padding-left: 0; }
+#wpairbnb_new_template .wprevpre_temp_label_row select,
+#wpairbnb_new_template .wprevpre_temp_label_row input[type="number"] {
+    max-width: 100%;
+}
+
+.wprevtooltip { cursor: pointer; }
+.wprevpro_tooltip {
+    display: none;
+    position: absolute;
+    padding-left: 10px;
+    padding-right: 10px;
+    color: #efefef;
+    background-color: #000000bf;
+    border-radius: 3px;
+    font-family: sans-serif;
+    font-style: normal;
+    font-size: 10px;
+    line-height: 24px;
+    z-index: 999999;
+}
+
+/* help text hidden until the ? icon is clicked */
+#wpairbnb_new_template p.description {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}
+#wpairbnb_new_template p.description.wpairbnb_desc_visible {
+    display: block !important;
+    margin: 0.4em 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+}
+.wpairbnb_helpicon_p.wpairbnb_btnicononlyhelp::before {
+    padding-top: 0;
+    cursor: pointer;
+    margin-top: 0;
+}
+/* tighter form-table th padding to match other pro tabs */
+#wpairbnb_new_template .form-table th,
+#wp_rev_maindiv .form-table th {
+    padding: 15px 10px;
+}
+#wpairbnb_new_template .settingstable th,
+#wpairbnb_new_template .settingstable td {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+/* "Next" tab button: dashicons only defines the arrow glyph on ::before,
+   so keep it on ::before but flip after the label with flex order. */
+#wp_rev_maindiv .button.dashicons-arrow-right-after::before,
+#wp_rev_maindiv a.button.dashicons-arrow-right-after::before,
+#wp_rev_maindiv span.button.dashicons-arrow-right-after::before {
+    font-family: dashicons;
+    content: "\f139";
+    order: 1;
+}
+
+/* tabs + badge settings */
+.cursorpointer { cursor: pointer; }
+.settingtab { cursor: pointer; }
+.settingtab.nav-tab { margin-left: 0; }
+.settingstable { border-bottom: 1px solid #ccc; margin-bottom: 10px; }
+.badgeinfo { display: flex; gap: 20px; flex-wrap: wrap; }
+.bsetlabel { font-weight: 600; }
+.badgeinfosetting.checkboxes { display: flex; align-items: center; gap: 2px; }
+.badgeinfosetting.checkboxes label { cursor: pointer; }
+#wpairbnb_new_template .badgeinfosetting:not(.checkboxes) {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+}
+#wpairbnb_new_template .badgeinfosetting:not(.checkboxes) .bsetlabel {
+    flex: 0 0 auto; margin: 0;
+}
+tr.wpairbnb_row.tabnoterow td { padding: 10px; }
+tr.wpairbnb_row.tabnoterow { background: #f6f6f6; }
+.nextprevbtn { margin-right: 6px; }
+.tabnote { font-size: 13px; color: #555; }
+.divtemplatestyles { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+
+/* server-rendered template preview */
+#update_form_msg_div { display: inline-block; vertical-align: middle; margin-left: 6px; }
+.wpairbnb_form_spinner { float: none; margin: 0 4px 0 0; visibility: hidden; }
+.wpairbnb_form_spinner.is-active { visibility: visible; }
+#update_form_msg { color: #46b450; font-weight: 600; }
+#update_form_msg .dashicons { color: #46b450; }
+#wpairbnb_preview_outermost {
+    margin-top: 20px;
+    padding: 16px;
+    border: 1px solid #e2e4e7;
+    border-radius: 4px;
+    background: #fff;
+}
+#wpairbnb_loading_prev_div { min-height: 20px; }
+.wpairbnb_preview_spinner { float: none; margin: 0; visibility: hidden; }
+.wpairbnb_preview_spinner.is-active { visibility: visible; }
+#wpairbnb_preview_outer { margin-top: 10px; }
+#wpairbnb_preview_outer img.wprev_missing_image { outline: 2px dashed #dc3232; outline-offset: -2px; }
+
+/*------ email opt-in (Brevo) --------*/
+.optbuttons {
+	display: flex;
+	justify-content: space-between;
+}
+#fs_connect{margin:60px auto 20px;width:484px;}
+#fs_connect a{color:inherit;}
+#fs_connect a:not(.button){text-decoration:underline;}
+#fs_connect .fs-box-container{background:#f0f0f1;border-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,.3);overflow:hidden;padding-top:40px;}
+@media screen and (max-width:483px){
+#fs_connect{margin:30px 0 0 -10px;width:auto;}
+#fs_connect .fs-box-container{box-shadow:none;}
+}
+#fs_connect .fs-content{background:#fff;padding:30px 20px;}
+#fs_connect .fs-content p{font-size:1.2em;margin:0;padding:0;}
+#fs_connect .fs-header{height:0;line-height:0;padding:0;position:relative;}
+#fs_connect .fs-header img{border-radius:50%;height:50px;width:50px;}
+#fs_connect .fs-header .fs-plugin-icon{border-radius:50%;left:50%;margin-left:-44px;overflow:hidden;position:absolute;top:-23px;z-index:1;}
+#fs_connect .fs-header .fs-plugin-icon,#fs_connect .fs-header .fs-plugin-icon img{height:80px;width:80px;}
+#fs_connect .fs-header .fs-plugin-icon{background:#fff;border:1px solid #efefef;padding:3px;}
+#fs_connect .allowbutton{margin-right:auto;}
+#fs_connect .skipbutton{margin-left:auto;}

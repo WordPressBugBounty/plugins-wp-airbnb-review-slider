@@ -69,7 +69,7 @@ class WP_Airbnb_Review {
 	public function __construct() {
 
 		$this->_token = 'wp-airbnb-review-slider';
-		$this->version = '4.5';
+		$this->version = '4.8';
 		//using this for development
 		//$this->version = time();
 
@@ -119,6 +119,10 @@ class WP_Airbnb_Review {
 			review_length int(5) NOT NULL,
 			type varchar(12) DEFAULT '' NOT NULL,
 			userpic varchar(250) DEFAULT '' NOT NULL,
+			userpiclocal varchar(500) DEFAULT '' NOT NULL,
+			from_url varchar(800) DEFAULT '' NOT NULL,
+			mediaurlsarrayjson text NOT NULL,
+			mediathumburlsarrayjson text NOT NULL,
 			UNIQUE KEY id (id)
 		) $charset_collate;";
 		dbDelta( $sql );
@@ -150,8 +154,10 @@ class WP_Airbnb_Review {
 			sliderdots varchar(3) DEFAULT '' NOT NULL,
 			sliderdelay int(2) NOT NULL,
 			sliderheight varchar(3) DEFAULT '' NOT NULL,
+			review_same_height varchar(3) DEFAULT '' NOT NULL,
+			slidermobileview varchar(10) DEFAULT '' NOT NULL,
 			showreviewsbyid varchar(600) DEFAULT '' NOT NULL,
-			template_misc varchar(200) DEFAULT '' NOT NULL,
+			template_misc text DEFAULT '' NOT NULL,
 			read_more varchar(3) DEFAULT '' NOT NULL,
 			read_more_num int(4) NOT NULL,
 			read_more_text varchar(25) DEFAULT '' NOT NULL,
@@ -159,7 +165,29 @@ class WP_Airbnb_Review {
 		) $charset_collate;";
 		
 		dbDelta( $sql_template );
-		
+
+		//create totals/averages table used for badge averages
+		$table_name_totalavg = $wpdb->prefix . 'wpairbnb_total_averages';
+		$sql_totalavg = "CREATE TABLE $table_name_totalavg (
+			btp_id varchar(150) DEFAULT '' NOT NULL,
+			btp_name varchar(150) DEFAULT '' NOT NULL,
+			btp_type varchar(10) DEFAULT '' NOT NULL,
+			pagetype varchar(100) DEFAULT '' NOT NULL,
+			pagetypedetails text NOT NULL,
+			total_indb varchar(10) DEFAULT '' NOT NULL,
+			total varchar(10) DEFAULT '' NOT NULL,
+			avg_indb varchar(10) DEFAULT '' NOT NULL,
+			avg varchar(10) DEFAULT '' NOT NULL,
+			numr1 varchar(10) DEFAULT '' NOT NULL,
+			numr2 varchar(10) DEFAULT '' NOT NULL,
+			numr3 varchar(10) DEFAULT '' NOT NULL,
+			numr4 varchar(10) DEFAULT '' NOT NULL,
+			numr5 varchar(10) DEFAULT '' NOT NULL,
+			UNIQUE KEY id (btp_id),
+			PRIMARY KEY (btp_id)
+		) $charset_collate;";
+		dbDelta( $sql_totalavg );
+
 		}
 		
 		
@@ -265,6 +293,9 @@ class WP_Airbnb_Review {
 		// register our wpairbnb_airbnb_settings_init to the admin_init action hook, add setting inputs
 		$this->loader->add_action('admin_init', $plugin_admin, 'wpairbnb_airbnb_settings_init');
 
+		// First-visit Brevo email opt-in redirect
+		$this->loader->add_action( 'admin_init', $plugin_admin, 'wpairbnb_maybe_redirect_optin' );
+
 		//add menu page
 		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_menu_pages' );
 		
@@ -274,8 +305,21 @@ class WP_Airbnb_Review {
 		//add ajax for hiding and deleting reviews in table
 		$this->loader->add_action( 'wp_ajax_airbnb_hide_review', $plugin_admin, 'wpairbnb_hidereview_ajax' ); 
 
+		//add ajax for saving an edited review (avatar + date) in the review list
+		$this->loader->add_action( 'wp_ajax_wpairbnb_save_review', $plugin_admin, 'wpairbnb_savereview_ajax' );
+
 		//add ajax for hiding and deleting reviews in table
 		$this->loader->add_action( 'wp_ajax_airbnb_find_reviews', $plugin_admin, 'wpairbnb_getreviews_ajax' ); 		
+
+		//add ajax for adding an Airbnb source and downloading its reviews
+		$this->loader->add_action( 'wp_ajax_wpairbnb_add_source', $plugin_admin, 'wpairbnb_ajax_add_source' );
+		$this->loader->add_action( 'wp_ajax_wpairbnb_download_source', $plugin_admin, 'wpairbnb_ajax_download_source' );
+
+		//templates page: save template via ajax (Update button)
+		$this->loader->add_action( 'wp_ajax_wpairbnb_save_template', $plugin_admin, 'wpairbnb_savetemplate_ajax' );
+
+		//templates page: get rendered preview html via ajax
+		$this->loader->add_action( 'wp_ajax_wpairbnb_get_preview', $plugin_admin, 'wpairbnb_previewtemplate_ajax' );
 		
 
 		//add download csv file function wpairbnb_download_csv
