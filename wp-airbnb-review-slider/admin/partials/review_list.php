@@ -38,9 +38,18 @@ include("tabmenu.php");
 <div class="wpairbnb_margin10">
 	<a id="wpairbnb_helpicon" class="wpairbnb_btnicononly button dashicons-before dashicons-editor-help"></a>
 	<a id="wpairbnb_removeallbtn" data-sec="<?php echo esc_attr( $nonce ); ?>" class="button dashicons-before dashicons-no"><?php _e('Remove All Reviews', 'wp-airbnb-review-slider'); ?></a>
+	<a href="https://wpreviewslider.com/" target="_blank" class="button dashicons-before dashicons-plus-alt" title="<?php esc_attr_e( 'Pro feature', 'wp-airbnb-review-slider' ); ?>"><?php esc_html_e( 'Add Review', 'wp-airbnb-review-slider' ); ?> <span style="background:#ff6b35;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:bold;margin-left:4px;">PRO</span></a>
+	<a href="https://wpreviewslider.com/" target="_blank" class="button dashicons-before dashicons-download" title="<?php esc_attr_e( 'Pro feature', 'wp-airbnb-review-slider' ); ?>"><?php esc_html_e( 'Download CSV', 'wp-airbnb-review-slider' ); ?> <span style="background:#ff6b35;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:bold;margin-left:4px;">PRO</span></a>
+	<br><span class="small_message">
+	<?php
+	echo wp_kses_post(
+		__( 'Manually add reviews, download/import a CSV, tag reviews, bulk edit, and more available in the <a href="https://wpreviewslider.com/" target="_blank">Pro Version</a> of this plugin!', 'wp-airbnb-review-slider' )
+	);
+	?>
+	</span>
 <p>
 	<?php 
-_e('Click the eye icon to hide or show a review, the pencil to edit the reviewer avatar and date, or the trash icon to delete. Search reviews, manually add reviews, save a CSV file of your reviews to your computer, and more features available in the <a href="https://wpreviewslider.com/" target="_blank">Pro Version</a> of this plugin!', 'wp-airbnb-review-slider'); 
+esc_html_e( 'Click the eye icon to hide or show a review, the pencil to edit the reviewer avatar and date, or the trash icon to delete.', 'wp-airbnb-review-slider' );
 ?>
 </p>
 </div>
@@ -234,7 +243,7 @@ _e('Click the eye icon to hide or show a review, the pencil to edit the reviewer
 			}
 		} else {
 				$html .= '<tr>
-						<th colspan="9" scope="col" class="manage-column">'.__('No reviews found. Please visit the <a href="?page=wp_airbnb-get_airbnb">Get Airbnb Reviews</a> page to retrieve reviews.', 'wp-airbnb-review-slider').'</th>
+						<th colspan="9" scope="col" class="manage-column">' . __( 'No reviews found. Please visit the <a href="?page=wp_airbnb-get_airbnb">Get Airbnb Reviews</a> page to retrieve reviews.', 'wp-airbnb-review-slider' ) . '<br><br>' . __( 'Want to put this on autopilot? <a href="https://wpreviewslider.com/" target="_blank">Upgrade to Pro</a> to automatically sync new reviews, pull from 100+ sites, and collect reviews on your site. Use code <strong>WPPRO15</strong> for 15% off.', 'wp-airbnb-review-slider' ) . '</th>
 					</tr>';
 		}					
 				

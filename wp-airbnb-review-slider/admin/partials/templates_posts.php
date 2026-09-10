@@ -43,6 +43,14 @@ $currenttemplate->template_misc      = '';
 $currenttemplate->read_more          = '';
 $currenttemplate->read_more_num      = '';
 $currenttemplate->read_more_text     = 'read more';
+$currenttemplate->sliderheight        = '';
+$currenttemplate->review_same_height = '';
+$currenttemplate->sliderautoplay      = '';
+$currenttemplate->sliderdirection     = '';
+$currenttemplate->sliderarrows       = '';
+$currenttemplate->sliderdots         = '';
+$currenttemplate->sliderdelay         = '';
+$currenttemplate->slidermobileview   = '';
 
 // db function variables
 global $wpdb;
@@ -104,7 +112,17 @@ if ( isset( $_POST['wpairbnb_submittemplatebtn'] ) ) {
 	$read_more_num    = isset( $_POST['wprevpro_t_read_more_num'] ) ? intval( $_POST['wprevpro_t_read_more_num'] ) : 30;
 	$min_rating       = isset( $_POST['wpairbnb_t_min_rating'] ) ? intval( $_POST['wpairbnb_t_min_rating'] ) : 1;
 	$review_same_hgt  = isset( $_POST['wpairbnb_t_review_same_height'] ) ? sanitize_text_field( wp_unslash( $_POST['wpairbnb_t_review_same_height'] ) ) : 'no';
-	$filtersource     = isset( $_POST['wpairbnb_t_filtersource'] ) ? sanitize_text_field( wp_unslash( $_POST['wpairbnb_t_filtersource'] ) ) : '';
+	$filtersource     = isset( $_POST['wpairbnb_t_filtersource'] ) ? wp_unslash( $_POST['wpairbnb_t_filtersource'] ) : '';
+	// Free version: one listing source per template.
+	if ( is_array( $filtersource ) ) {
+		$filtersource = reset( $filtersource );
+	}
+	$filtersource = sanitize_text_field( (string) $filtersource );
+	if ( strpos( $filtersource, ',' ) !== false ) {
+		$parts        = explode( ',', $filtersource );
+		$filtersource = trim( $parts[0] );
+	}
+	$filtersource = preg_replace( '/[^A-Za-z0-9_-]/', '', $filtersource );
 
 	// template misc (style + slider + badge, stored as JSON the public renderer reads)
 	$templatemiscarray = array();
@@ -346,8 +364,10 @@ if ( ! isset( $template_misc_array['showicon'] ) ) { $template_misc_array['showi
 if ( ! isset( $template_misc_array['tfont1'] ) ) { $template_misc_array['tfont1'] = ''; }
 if ( ! isset( $template_misc_array['tfont2'] ) ) { $template_misc_array['tfont2'] = ''; }
 // general-tab defaults (read more + reviews same height)
-if ( ! isset( $template_misc_array['review_same_height'] ) ) { $template_misc_array['review_same_height'] = ( $currenttemplate->sliderheight !== '' ? $currenttemplate->sliderheight : 'no' ); }
-if ( ! isset( $template_misc_array['read_more_num'] ) || $template_misc_array['read_more_num'] === '' ) { $template_misc_array['read_more_num'] = ( $currenttemplate->read_more_num > 0 ? $currenttemplate->read_more_num : '30' ); }
+$legacy_sliderheight = ( isset( $currenttemplate->sliderheight ) && $currenttemplate->sliderheight !== '' ) ? $currenttemplate->sliderheight : 'no';
+if ( ! isset( $template_misc_array['review_same_height'] ) ) { $template_misc_array['review_same_height'] = $legacy_sliderheight; }
+$legacy_read_more_num = ( isset( $currenttemplate->read_more_num ) && $currenttemplate->read_more_num > 0 ) ? $currenttemplate->read_more_num : '30';
+if ( ! isset( $template_misc_array['read_more_num'] ) || $template_misc_array['read_more_num'] === '' ) { $template_misc_array['read_more_num'] = $legacy_read_more_num; }
 if ( ! isset( $template_misc_array['read_more_color'] ) ) { $template_misc_array['read_more_color'] = ''; }
 
 // Build the source (pageid) list for the Choose Source filter.
@@ -382,7 +402,7 @@ if ( isset( $template_misc_array['filtersource'] ) && $template_misc_array['filt
 } elseif ( isset( $currenttemplate->rpage ) ) {
 	$wpairbnb_selected_source = $currenttemplate->rpage;
 }
-if ( $wpairbnb_selected_source === '' && $currenttemplate->id === '' && ! empty( $wpairbnb_source_ids ) ) {
+if ( $wpairbnb_selected_source === '' && ! empty( $wpairbnb_source_ids ) ) {
 	$wpairbnb_source_keys     = array_keys( $wpairbnb_source_ids );
 	$wpairbnb_selected_source = end( $wpairbnb_source_keys );
 }
@@ -401,9 +421,21 @@ $wpairbnb_imgs_base = trailingslashit( wprev_airbnb_plugin_url ) . 'public/parti
 	<span id="settingtab1" class="settingtab nav-tab cursorpointer gotopage1"><?php _e( 'General Settings', 'wp-airbnb-review-slider' ); ?></span>
 	<span id="settingtab2" class="settingtab nav-tab cursorpointer gotopage2"><?php _e( 'Filter Settings', 'wp-airbnb-review-slider' ); ?></span>
 	<span id="settingtab3" class="settingtab nav-tab cursorpointer gotopage3"><?php _e( 'Badge Settings', 'wp-airbnb-review-slider' ); ?></span>
+	<span id="settingtab4" class="settingtab nav-tab cursorpointer gotopage4"><?php _e( 'AI Summary', 'wp-airbnb-review-slider' ); ?> <span style="background:#ff6b35;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:bold;margin-left:4px;">PRO</span></span>
 </h2>
 
 <table id="settingtable0" class="form-table settingstable ">
+	<tr class="wpairbnb_row">
+		<td colspan="2" class="wpfbr-pro-tab-banner-cell">
+			<div class="wpfbr-pro-tab-banner">
+				<p style="margin:0;">
+					<?php echo wp_kses_post( __( 'Unlock <strong>15 review layouts</strong>, custom star styles, date formats, avatar controls, hover effects, and more with Pro.', 'wp-airbnb-review-slider' ) ); ?>
+					<a href="https://wpreviewslider.com/" target="_blank"><strong><?php esc_html_e( 'Explore Pro Features', 'wp-airbnb-review-slider' ); ?></strong></a>
+					— <?php esc_html_e( 'Use code', 'wp-airbnb-review-slider' ); ?> <code>WPPRO15</code> <?php esc_html_e( 'for 15% off.', 'wp-airbnb-review-slider' ); ?>
+				</p>
+			</div>
+		</td>
+	</tr>
 	<tr class="wpairbnb_row">
 		<td>
 			<div class="w3_wprs-row">
@@ -524,6 +556,15 @@ $wpairbnb_imgs_base = trailingslashit( wprev_airbnb_plugin_url ) . 'public/parti
 
 <table id="settingtable1" class="form-table settingstable " style="display:none;">
 	<tr class="wpairbnb_row">
+		<td colspan="2" class="wpfbr-pro-tab-banner-cell">
+			<div class="wpfbr-pro-tab-banner">
+				<p style="margin:0;">
+					<?php echo wp_kses_post( __( 'Build <strong>masonry grids</strong> and advanced sliders with up to <strong>200 slides</strong>, Load More, endless scroll, fade effects, and custom breakpoints with Pro.', 'wp-airbnb-review-slider' ) ); ?>
+				</p>
+			</div>
+		</td>
+	</tr>
+	<tr class="wpairbnb_row">
 		<th scope="row"><?php _e( 'Number of Reviews:', 'wp-airbnb-review-slider' ); ?><a class="wpairbnb_helpicon_p wpairbnb_btnicononlyhelp dashicons-before dashicons-editor-help"></a></th>
 		<td><div class="divtemplatestyles">
 			<label for="wpairbnb_t_display_num"><?php _e( 'How many per a row?', 'wp-airbnb-review-slider' ); ?></label>
@@ -601,19 +642,33 @@ $wpairbnb_imgs_base = trailingslashit( wprev_airbnb_plugin_url ) . 'public/parti
 
 <table id="settingtable2" class="form-table settingstable " style="display:none;">
 	<tr class="wpairbnb_row">
+		<td colspan="2" class="wpfbr-pro-tab-banner-cell">
+			<div class="wpfbr-pro-tab-banner">
+				<p style="margin:0;">
+					<?php echo wp_kses_post( __( 'Filter reviews by <strong>keywords</strong>, length, tags, language, media, <strong>multiple listings/sources</strong>, or hand-pick specific reviews with Pro.', 'wp-airbnb-review-slider' ) ); ?>
+				</p>
+			</div>
+		</td>
+	</tr>
+	<tr class="wpairbnb_row">
 		<th scope="row"><?php _e( 'Choose Source:', 'wp-airbnb-review-slider' ); ?><a class="wpairbnb_helpicon_p wpairbnb_btnicononlyhelp dashicons-before dashicons-editor-help"></a></th>
 		<td>
 			<select name="wpairbnb_t_filtersource" id="wpairbnb_t_filtersource">
 			<?php if ( empty( $wpairbnb_source_ids ) ) : ?>
-				<option value=""><?php esc_html_e( 'All sources', 'wp-airbnb-review-slider' ); ?></option>
+				<option value=""><?php esc_html_e( 'No listings yet — download reviews first', 'wp-airbnb-review-slider' ); ?></option>
 			<?php else : ?>
-				<option value="" <?php selected( $wpairbnb_selected_source, '' ); ?>><?php esc_html_e( 'All sources', 'wp-airbnb-review-slider' ); ?></option>
 				<?php foreach ( $wpairbnb_source_ids as $spageid => $sname ) : ?>
 					<option value="<?php echo esc_attr( $spageid ); ?>" data-fromurl="<?php echo esc_attr( isset( $wpairbnb_source_urls[ $spageid ] ) ? $wpairbnb_source_urls[ $spageid ] : $wpairbnb_default_badge_url ); ?>" <?php selected( $wpairbnb_selected_source, $spageid ); ?>><?php echo esc_html( $sname ); ?></option>
 				<?php endforeach; ?>
 			<?php endif; ?>
 			</select>
-			<p class="description"><?php _e( 'Which Airbnb listing should this template show reviews from?', 'wp-airbnb-review-slider' ); ?></p>
+			<p class="description">
+			<?php
+			echo wp_kses_post(
+				__( 'The free version allows <strong>one Airbnb listing</strong> per template. <a href="https://wpreviewslider.com/" target="_blank">Upgrade to Pro</a> to combine multiple Airbnb listings in one template. Use code <code>WPPRO15</code> for 15% off.', 'wp-airbnb-review-slider' )
+			);
+			?>
+			</p>
 		</td>
 	</tr>
 	<tr class="wpairbnb_row">
@@ -687,6 +742,15 @@ if ( ! isset( $template_misc_array['bhreviews'] ) ) { $template_misc_array['bhre
 if ( ! isset( $template_misc_array['bobasedon'] ) ) { $template_misc_array['bobasedon'] = 'Based on # reviews'; }
 if ( ! isset( $template_misc_array['borevus'] ) ) { $template_misc_array['borevus'] = 'Review us on Airbnb!'; }
 ?>
+	<tr class="wpairbnb_row">
+		<td colspan="2" class="wpfbr-pro-tab-banner-cell">
+			<div class="wpfbr-pro-tab-banner">
+				<p style="margin:0;">
+					<?php echo wp_kses_post( __( 'Create <strong>standalone review badges</strong>, dynamically display review totals, and get more control over your Review Us button with Pro.', 'wp-airbnb-review-slider' ) ); ?>
+				</p>
+			</div>
+		</td>
+	</tr>
 	<tr class="wpairbnb_row tabnoterow">
 		<td colspan="2">
 			<div class="tabnote">&nbsp;&nbsp;<?php _e( 'Use this page to place a badge next to your reviews. This is a brand new feature so let me know if you see any formatting issues.', 'wp-airbnb-review-slider' ); ?></div>
@@ -818,8 +882,63 @@ if ( ! isset( $template_misc_array['borevus'] ) ) { $template_misc_array['borevu
 	<tr class="wpairbnb_row">
 		<th scope="row" colspan="2">
 			<span class="nextprevbtn w3-green button button-secondary dashicons-before dashicons-arrow-left gotopage2"><?php _e( 'Previous', 'wp-airbnb-review-slider' ); ?></span>
+			<span class="nextprevbtn w3-green button button-secondary dashicons-before dashicons-arrow-right-after gotopage4"><?php _e( 'Next', 'wp-airbnb-review-slider' ); ?></span>
 		</th>
 	</tr>
+</table>
+
+<table id="settingtable4" class="form-table settingstable " style="display:none;">
+	<tbody>
+		<tr class="wpairbnb_row">
+			<td colspan="2" class="wpfbr-pro-tab-banner-cell">
+				<div class="wpfbr-pro-tab-banner">
+					<p style="margin:0;">
+						<?php echo wp_kses_post( __( '<strong>AI Review Summary</strong> turns your Airbnb reviews into a clear visitor-facing summary with overall sentiment, common praise, and areas for improvement.', 'wp-airbnb-review-slider' ) ); ?>
+					</p>
+				</div>
+			</td>
+		</tr>
+		<tr class="wpairbnb_row">
+			<th scope="row">
+				<?php esc_html_e( 'Example', 'wp-airbnb-review-slider' ); ?>
+			</th>
+			<td>
+				<?php
+				$ai_summary_img1 = plugin_dir_url( __FILE__ ) . 'imgs/ai_summary_example.png';
+				$ai_summary_img2 = plugin_dir_url( __FILE__ ) . 'imgs/ai_summary_example2.png';
+				?>
+				<div class="wpfbr-ai-summary-thumbs">
+					<a href="<?php echo esc_url( $ai_summary_img1 ); ?>" data-lity class="wpfbr-ai-summary-thumb">
+						<img src="<?php echo esc_url( $ai_summary_img1 ); ?>" alt="<?php esc_attr_e( 'AI Review Summary example', 'wp-airbnb-review-slider' ); ?>">
+					</a>
+					<a href="<?php echo esc_url( $ai_summary_img2 ); ?>" data-lity class="wpfbr-ai-summary-thumb">
+						<img src="<?php echo esc_url( $ai_summary_img2 ); ?>" alt="<?php esc_attr_e( 'AI Review Summary example 2', 'wp-airbnb-review-slider' ); ?>">
+					</a>
+				</div>
+			</td>
+		</tr>
+		<tr class="wpairbnb_row">
+			<th scope="row">
+				<?php esc_html_e( 'Settings in Pro', 'wp-airbnb-review-slider' ); ?>
+			</th>
+			<td>
+				<ul style="list-style: disc; margin: 0 0 0 1.5em; line-height: 1.7;">
+					<li><?php esc_html_e( 'Turn AI Summary on or off for each review template.', 'wp-airbnb-review-slider' ); ?></li>
+					<li><?php esc_html_e( 'Choose the language of the generated summary (or leave blank to match the reviews).', 'wp-airbnb-review-slider' ); ?></li>
+					<li><?php esc_html_e( 'Set the approximate number of sentences for summary length.', 'wp-airbnb-review-slider' ); ?></li>
+					<li><?php esc_html_e( 'Generate AI Instructions for use with your own AI tool, or generate the summary with the Pro AI service.', 'wp-airbnb-review-slider' ); ?></li>
+					<li><?php esc_html_e( 'Choose where it displays: as the first review, above the reviews, in a badge, and/or in the header.', 'wp-airbnb-review-slider' ); ?></li>
+					<li><?php esc_html_e( 'Show or hide “What customers love” (common praises).', 'wp-airbnb-review-slider' ); ?></li>
+					<li><?php esc_html_e( 'Show or hide “Areas for improvement” (common complaints).', 'wp-airbnb-review-slider' ); ?></li>
+				</ul>
+			</td>
+		</tr>
+		<tr class="wpairbnb_row">
+			<th scope="row" colspan="2">
+				<span class="nextprevbtn w3-green button button-secondary dashicons-before dashicons-arrow-left gotopage3"><?php _e( 'Previous', 'wp-airbnb-review-slider' ); ?></span>
+			</th>
+		</tr>
+	</tbody>
 </table>
 	<?php
 	// security nonce

@@ -73,22 +73,39 @@ class WP_Airbnb_Review_Admin {
 		 * between the defined hooks and the functions defined in this
 		 * class.
 		 */
-		//only load for this plugin wp_airbnb-settings-pricing
-		if(isset($_GET['page'])){
-			if($_GET['page']=="wp_airbnb-reviews" || $_GET['page']=="wp_airbnb-templates_posts" || $_GET['page']=="wp_airbnb-get_airbnb" || $_GET['page']=="wp_airbnb-get_pro" || $_GET['page']=="wp_airbnb-welcome" || $_GET['page']=="wp_airbnb-opt"){
+		//only load for this plugin pages (wp_airbnb-*)
+		if ( isset( $_GET['page'] ) && strpos( $_GET['page'], 'wp_airbnb-' ) !== false ) {
 
 			wp_register_style( 'Font_Awesome', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css' );
-			wp_enqueue_style('Font_Awesome');
+			wp_enqueue_style( 'Font_Awesome' );
 
-			wp_enqueue_style( $this->_token."_wprev_w3", plugin_dir_url( __FILE__ ) . 'css/wprev_w3.css', array(), $this->version, 'all' );
-
+			wp_enqueue_style( $this->_token . '_wprev_w3', plugin_dir_url( __FILE__ ) . 'css/wprev_w3.css', array(), $this->version, 'all' );
 			wp_enqueue_style( $this->_token, plugin_dir_url( __FILE__ ) . 'css/wpairbnb_admin.css', array(), $this->version, 'all' );
-			wp_enqueue_style( $this->_token."_wpairbnb_w3", plugin_dir_url( __FILE__ ) . 'css/wpairbnb_w3.css', array(), $this->version, 'all' );
+			wp_enqueue_style( $this->_token . '_wprev_admin', plugin_dir_url( __FILE__ ) . 'css/wprev_admin.css', array(), $this->version, 'all' );
+			wp_enqueue_style( $this->_token . '_wpairbnb_w3', plugin_dir_url( __FILE__ ) . 'css/wpairbnb_w3.css', array(), $this->version, 'all' );
+
+			//load template styles for the templates page (Style 1 + Style 6 live preview + AI thumbs)
+			if ( $_GET['page'] === 'wp_airbnb-templates_posts' || $_GET['page'] === 'wp_airbnb-get_pro' || $_GET['page'] === 'wp_airbnb-welcome' ) {
+				wp_enqueue_style( $this->_token . '_style1', plugin_dir_url( dirname( __FILE__ ) ) . 'public/css/wprev-public_template1.css', array(), $this->version, 'all' );
+				wp_enqueue_style( $this->_token . '_style6', plugin_dir_url( dirname( __FILE__ ) ) . 'public/css/wprev-public_template6.css', array(), $this->version, 'all' );
+				wp_enqueue_style( $this->_token . '_lity', plugin_dir_url( __FILE__ ) . 'css/lity.min.css', array(), $this->version, 'all' );
 			}
-			//load template styles for the templates page (Style 1 + Style 6 live preview)
-			if($_GET['page']=="wp_airbnb-templates_posts" || $_GET['page']=="wp_airbnb-get_pro" || $_GET['page']=="wp_airbnb-welcome"){
-				wp_enqueue_style( $this->_token."_style1", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprev-public_template1.css', array(), $this->version, 'all' );
-				wp_enqueue_style( $this->_token."_style6", plugin_dir_url(dirname(__FILE__)) . 'public/css/wprev-public_template6.css', array(), $this->version, 'all' );
+
+			if ( $_GET['page'] === 'wp_airbnb-reviews' ) {
+				wp_enqueue_style( $this->_token . '_lity_min', plugin_dir_url( __FILE__ ) . 'css/lity.min.css', array(), $this->version, 'all' );
+			}
+
+			if ( $_GET['page'] === 'wp_airbnb-analytics' ) {
+				wp_enqueue_style( $this->_token . '_style6', plugin_dir_url( dirname( __FILE__ ) ) . 'public/css/wprev-public_template6.css', array(), $this->version, 'all' );
+				wp_enqueue_style( 'chart-min', plugin_dir_url( __FILE__ ) . 'css/Chart.min.css', array(), $this->version, 'all' );
+				wp_enqueue_style( $this->_token . '_daterangepicker', plugin_dir_url( __FILE__ ) . 'css/daterangepicker.css', array(), $this->version, 'all' );
+				wp_enqueue_style( $this->_token . '_select2', plugin_dir_url( __FILE__ ) . 'css/select2.min.css', array(), $this->version, 'all' );
+				wp_enqueue_style( $this->_token . '_jqcloud', plugin_dir_url( __FILE__ ) . 'css/jqcloud.css', array(), $this->version, 'all' );
+			}
+
+			if ( $_GET['page'] === 'wp_airbnb-ai_analysis' ) {
+				wp_enqueue_style( 'chart-min', plugin_dir_url( __FILE__ ) . 'css/Chart.min.css', array(), $this->version, 'all' );
+				wp_enqueue_style( $this->_token . '_style6', plugin_dir_url( dirname( __FILE__ ) ) . 'public/css/wprev-public_template6.css', array(), $this->version, 'all' );
 			}
 		}
 
@@ -182,10 +199,96 @@ class WP_Airbnb_Review_Admin {
 				//slider engine so the live preview can build working sliders
 				wp_enqueue_script( $this->_token."_unslider-swipe-min", plugin_dir_url( dirname( __FILE__ ) ) . 'public/js/wprs-unslider-swipe.js', array( 'jquery' ), $this->version, false );
 
+				wp_enqueue_script( 'wpairbnb_lity-js', plugin_dir_url( __FILE__ ) . 'js/lity.min.js', array( 'jquery' ), $this->version, false );
+
 				//thickbox kept for the remaining inline "pro settings" popup on this page
  				wp_enqueue_script('thickbox');
 				wp_enqueue_style('thickbox');
 
+			}
+
+			if ( $_GET['page'] === 'wp_airbnb-analytics' ) {
+				global $wpdb;
+				$reviews_table_name = $wpdb->prefix . 'wpairbnb_reviews';
+				$typearray          = $wpdb->get_col( "SELECT type FROM {$reviews_table_name} WHERE LOWER(type) = 'airbnb' GROUP BY type" );
+
+				wp_enqueue_script( 'wprevpro_analytics_page-js', plugin_dir_url( __FILE__ ) . 'js/wprevpro_analytics_page.js', array( 'jquery' ), $this->version, false );
+				wp_localize_script(
+					'wprevpro_analytics_page-js',
+					'adminjs_script_vars',
+					array(
+						'wpfb_nonce'            => wp_create_nonce( 'randomnoncestring' ),
+						'ajax_url'              => admin_url( 'admin-ajax.php' ),
+						'gmt_offset_minutes'    => (int) ( get_option( 'gmt_offset' ) * 60 ),
+						'pluginsUrl'            => wprev_airbnb_plugin_url,
+						'globalwprevtypearray'  => wp_json_encode( $typearray ),
+						'customSourcesIconUrls' => wp_json_encode( array() ),
+						'msg1'                  => esc_html__( 'Location Filter', 'wp-airbnb-review-slider' ),
+						'msg2'                  => esc_html__( 'Type Filter', 'wp-airbnb-review-slider' ),
+						'd1'                    => esc_html__( 'Today', 'wp-airbnb-review-slider' ),
+						'd2'                    => esc_html__( 'Yesterday', 'wp-airbnb-review-slider' ),
+						'd3'                    => esc_html__( 'Last 7 Days', 'wp-airbnb-review-slider' ),
+						'd4'                    => esc_html__( 'Last 30 Days', 'wp-airbnb-review-slider' ),
+						'd5'                    => esc_html__( 'Last 60 Days', 'wp-airbnb-review-slider' ),
+						'd6'                    => esc_html__( 'Last 90 Days', 'wp-airbnb-review-slider' ),
+						'd7'                    => esc_html__( 'This Month', 'wp-airbnb-review-slider' ),
+						'd8'                    => esc_html__( 'Last Month', 'wp-airbnb-review-slider' ),
+						'd9'                    => esc_html__( 'This Year', 'wp-airbnb-review-slider' ),
+						'd10'                   => esc_html__( 'Last Year', 'wp-airbnb-review-slider' ),
+						'd11'                   => esc_html__( 'All Time', 'wp-airbnb-review-slider' ),
+						'msg3'                  => esc_html__( 'Error accessing language function via ajax.', 'wp-airbnb-review-slider' ),
+						'msg4'                  => esc_html__( 'Ratings', 'wp-airbnb-review-slider' ),
+						'msg5'                  => esc_html__( 'Error returning json object. Please try again or contact us and copy and send us the following:', 'wp-airbnb-review-slider' ),
+						'msg6'                  => esc_html__( 'Overall Ratings (Old >> New)', 'wp-airbnb-review-slider' ),
+						'msg7'                  => esc_html__( 'Review Response:', 'wp-airbnb-review-slider' ),
+						'msg8'                  => esc_html__( 'Type', 'wp-airbnb-review-slider' ),
+						'msg9'                  => esc_html__( 'Page', 'wp-airbnb-review-slider' ),
+						'msg10'                 => esc_html__( 'Source URL', 'wp-airbnb-review-slider' ),
+						'msg11'                 => esc_html__( 'Reviewer URL', 'wp-airbnb-review-slider' ),
+						'msg12'                 => esc_html__( 'Review Details', 'wp-airbnb-review-slider' ),
+					)
+				);
+
+				wp_register_script( $this->_token . 'chart-js', plugin_dir_url( __FILE__ ) . 'js/Chart.bundle.min.js', array(), $this->version, false );
+				wp_enqueue_script( $this->_token . 'chart-js' );
+				wp_register_script( $this->_token . 'chart-js-trendline', plugin_dir_url( __FILE__ ) . 'js/chartjs-plugin-trendline.js', array(), $this->version, false );
+				wp_enqueue_script( $this->_token . 'chart-js-trendline' );
+				wp_register_script( $this->_token . '_moment', plugin_dir_url( __FILE__ ) . 'js/moment.min.js', array(), $this->version, false );
+				wp_enqueue_script( $this->_token . '_moment' );
+				wp_register_script( $this->_token . '_daterangepicker', plugin_dir_url( __FILE__ ) . 'js/daterangepicker.js', array(), $this->version, false );
+				wp_enqueue_script( $this->_token . '_daterangepicker' );
+				wp_register_script( $this->_token . '_select2', plugin_dir_url( __FILE__ ) . 'js/select2.min.js', array(), $this->version, false );
+				wp_enqueue_script( $this->_token . '_select2' );
+				wp_register_script( $this->_token . '_jqcloud', plugin_dir_url( __FILE__ ) . 'js/jqcloud.min.js', array(), $this->version, false );
+				wp_enqueue_script( $this->_token . '_jqcloud' );
+
+				wp_enqueue_script( 'thickbox' );
+				wp_enqueue_style( 'thickbox' );
+			}
+
+			if ( $_GET['page'] === 'wp_airbnb-ai_analysis' ) {
+				wp_enqueue_script( 'thickbox' );
+				wp_enqueue_style( 'thickbox' );
+
+				wp_register_script( $this->_token . 'chart-js', plugin_dir_url( __FILE__ ) . 'js/Chart.bundle.min.js', array(), $this->version, false );
+				wp_enqueue_script( $this->_token . 'chart-js' );
+
+				wp_enqueue_script(
+					'wprevpro_ai_analysis_page-js',
+					plugin_dir_url( __FILE__ ) . 'js/wprevpro_ai_analysis_page.js',
+					array( 'jquery', 'thickbox', $this->_token . 'chart-js' ),
+					$this->version,
+					false
+				);
+				wp_localize_script(
+					'wprevpro_ai_analysis_page-js',
+					'adminjs_script_vars',
+					array(
+						'wpfb_nonce' => wp_create_nonce( 'randomnoncestring' ),
+						'ajax_url'   => admin_url( 'admin-ajax.php' ),
+						'pluginsUrl' => wprev_airbnb_plugin_url,
+					)
+				);
 			}
 		}
 		
@@ -230,6 +333,31 @@ class WP_Airbnb_Review_Admin {
 		$submenu_slug = 'wp_airbnb-templates_posts';
 		add_submenu_page($menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array($this,'wp_airbnb_templates_posts'));
 
+		$submenu_page_title = 'WP Airbnb Reviews : Analytics';
+		$submenu_title      = 'Analytics';
+		$submenu_slug       = 'wp_airbnb-analytics';
+		add_submenu_page( $menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array( $this, 'wp_airbnb_analytics' ) );
+
+		$submenu_page_title = 'WP Airbnb Reviews : Badges';
+		$submenu_title      = 'Badges';
+		$submenu_slug       = 'wp_airbnb-badges';
+		add_submenu_page( $menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array( $this, 'wp_airbnb_badges' ) );
+
+		$submenu_page_title = 'WP Airbnb Reviews : Forms';
+		$submenu_title      = 'Forms';
+		$submenu_slug       = 'wp_airbnb-forms';
+		add_submenu_page( $menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array( $this, 'wp_airbnb_forms' ) );
+
+		$submenu_page_title = 'WP Airbnb Reviews : Floats';
+		$submenu_title      = 'Floats';
+		$submenu_slug       = 'wp_airbnb-float';
+		add_submenu_page( $menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array( $this, 'wp_airbnb_float' ) );
+
+		$submenu_page_title = 'WP Airbnb Reviews : AI Analysis';
+		$submenu_title      = 'AI Analysis';
+		$submenu_slug       = 'wp_airbnb-ai_analysis';
+		add_submenu_page( $menu_slug, $submenu_page_title, $submenu_title, $capability, $submenu_slug, array( $this, 'wp_airbnb_ai_analysis' ) );
+
 		// Email opt-in (also used for first-visit redirect)
 		add_submenu_page( $menu_slug, 'WP Airbnb Reviews : Email Opt-In', __( 'Email Opt-In', 'wp-airbnb-review-slider' ), $capability, 'wp_airbnb-opt', array( $this, 'wp_airbnb_opt' ) );
 
@@ -259,6 +387,11 @@ class WP_Airbnb_Review_Admin {
 			'wp_airbnb-reviews',
 			'wp_airbnb-get_airbnb',
 			'wp_airbnb-templates_posts',
+			'wp_airbnb-analytics',
+			'wp_airbnb-badges',
+			'wp_airbnb-forms',
+			'wp_airbnb-float',
+			'wp_airbnb-ai_analysis',
 			'wp_airbnb-get_pro',
 		);
 		if ( ! in_array( $page, $plugin_pages, true ) ) {
@@ -281,7 +414,7 @@ class WP_Airbnb_Review_Admin {
 		$menu_slug = 'wp_airbnb-welcome';
 
 		if ( array_key_exists( $menu_slug, $submenu ) ) {
-			$submenu[ $menu_slug ][] = array( '<div id="wprev-66023">Go Pro!</div>', 'manage_options', 'https://wpreviewslider.com/' );
+			$submenu[ $menu_slug ][] = array( '<div id="wprev-66023">&#11088; Go Pro!</div>', 'manage_options', 'https://wpreviewslider.com/' );
 		}
 	}
 	public function wpse_66023_add_jquery() 
@@ -308,6 +441,21 @@ class WP_Airbnb_Review_Admin {
 	}
 	public function wp_airbnb_getairbnb() {
 		require_once plugin_dir_path( __FILE__ ) . '/partials/get_airbnb.php';
+	}
+	public function wp_airbnb_analytics() {
+		require_once plugin_dir_path( __FILE__ ) . '/partials/analytics.php';
+	}
+	public function wp_airbnb_badges() {
+		require_once plugin_dir_path( __FILE__ ) . '/partials/badges.php';
+	}
+	public function wp_airbnb_forms() {
+		require_once plugin_dir_path( __FILE__ ) . '/partials/forms.php';
+	}
+	public function wp_airbnb_float() {
+		require_once plugin_dir_path( __FILE__ ) . '/partials/float.php';
+	}
+	public function wp_airbnb_ai_analysis() {
+		require_once plugin_dir_path( __FILE__ ) . '/partials/ai_analysis.php';
 	}
 	public function wp_fb_getpro() {
 		require_once plugin_dir_path( __FILE__ ) . '/partials/get_pro.php';
@@ -2715,7 +2863,16 @@ class WP_Airbnb_Review_Admin {
 		$read_more_num    = absint( $get( 'wprevpro_t_read_more_num', '30' ) );
 		$min_rating       = sanitize_text_field( $get( 'wpairbnb_t_min_rating', '1' ) );
 		$review_same_hgt  = sanitize_text_field( $get( 'wpairbnb_t_review_same_height', 'no' ) );
-		$filtersource     = sanitize_text_field( $get( 'wpairbnb_t_filtersource' ) );
+		$filtersource     = $get( 'wpairbnb_t_filtersource' );
+		if ( is_array( $filtersource ) ) {
+			$filtersource = reset( $filtersource );
+		}
+		$filtersource = sanitize_text_field( (string) $filtersource );
+		if ( strpos( $filtersource, ',' ) !== false ) {
+			$parts        = explode( ',', $filtersource );
+			$filtersource = trim( $parts[0] );
+		}
+		$filtersource = preg_replace( '/[^A-Za-z0-9_-]/', '', $filtersource );
 
 		// template misc (style + slider + badge, stored as JSON the public renderer reads)
 		$templatemiscarray = array();

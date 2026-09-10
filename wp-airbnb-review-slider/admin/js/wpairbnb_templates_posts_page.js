@@ -29,25 +29,26 @@
 		var pluginsUrl = (typeof adminjs_script_vars !== 'undefined' && adminjs_script_vars.pluginsUrl) ? adminjs_script_vars.pluginsUrl : '';
 
 		//---------- live preview sample content ----------
-		var starhtml = '<span class="wprev_stars_wrap wprevpro_star_imgs_T1"><span class="starloc1 wprevpro_star_imgs wprevpro_star_imgsloc1"><span class="svgicons svg-wprsp-star"></span><span class="svgicons svg-wprsp-star"></span><span class="svgicons svg-wprsp-star"></span><span class="svgicons svg-wprsp-star"></span><span class="svgicons svg-wprsp-star"></span></span></span>';
+		var starimg = pluginsUrl + '/public/partials/imgs/stars_5_yellow.png';
+		var starhtml = '<span class="wprev_stars_wrap"><img src="'+starimg+'" alt="stars" class="wpairbnb_t1_star_img_file"></span>';
 		var starhtmlt6 = '<span class="wprev_stars_wrap wprevpro_star_imgs_T6"><span class="starloc1 wprevpro_star_imgs wprevpro_star_imgsloc1"><span class="svgicons svg-wprsp-star"></span><span class="svgicons svg-wprsp-star"></span><span class="svgicons svg-wprsp-star"></span><span class="svgicons svg-wprsp-star"></span><span class="svgicons svg-wprsp-star"></span></span></span>';
 		var sampltext = 'This is a sample review. Hands down the best stay we have had! Awesome host and location. We will gladly recommend this place to all our friends!';
 		var verified1 = '<span class="verifiedloc1 wprevpro_verified_svg wprevtooltip" data-wprevtooltip="Verified on Airbnb"><span class="svgicons svg-wprsp-verified"></span></span>';
 		var iconhref = pluginsUrl + '/public/partials/imgs/airbnb_outline.png';
-		var iconhtml = '<img id="wprev_showicon" src="'+iconhref+'" alt="Airbnb" class="wprevpro_t1_site_logo siteicon">';
+		var iconhtml = '<img id="wprev_showicon" src="'+iconhref+'" alt="Airbnb" class="wpairbnb_t1_airbnb_logo siteicon">';
 		var iconhtmlt6 = '<img id="wprev_showicon" src="'+iconhref+'" alt="Airbnb" class="wprevpro_t6_site_logo siteicon">';
 
 		var imagehref = pluginsUrl + '/admin/partials/sample_avatar.jpg';
-		var imagehrefmystery = pluginsUrl + '/public/partials/imgs/airbnb_mystery_man.png';
+		var imagehrefmystery = pluginsUrl + '/public/partials/imgs/profile_pic.png';
 		var lastnamehtml = '<span id="wprev_lastname">Wilson</span>';
 		var displayname = 'Josh '+lastnamehtml;
 
-		var style1html = '<div class="wprevpro_t1_outer_div w3_wprs-row-padding">	\
-							<div class="wprevpro_t1_DIV_1 w3_wprs-col">	\
-								<div class="wprevpro_t1_DIV_2 indrevdiv wprev_preview_tcolor1_T1 wprev_preview_bg1_T1 wprev_preview_bradius_T1">	\
-									<p class="wprevpro_t1_P_3 wprev_preview_tcolor1_T1">'+starhtml+''+verified1+''+sampltext+'</p>	\
+		var style1html = '<div class="wpairbnb_t1_outer_div w3_wprs-row-padding">	\
+							<div class="wpairbnb_t1_DIV_1 w3_wprs-col">	\
+								<div class="wpairbnb_t1_DIV_2 indrevdiv wprev_preview_tcolor1_T1 wprev_preview_bg1_T1 wprev_preview_bradius_T1">	\
+									<p class="wpairbnb_t1_P_3 wprev_preview_tcolor1_T1">'+starhtml+''+verified1+''+sampltext+'</p>	\
 									<a href="#" target="_blank" rel="nofollow">'+iconhtml+'</a>	\
-								</div><span class="wprevpro_t1_A_8"><img src="'+imagehref+'" alt="thumb" class="wprevpro_t1_IMG_4 wprev_avatar_opt"></span> <span class="wprevpro_t1_SPAN_5 wprev_preview_tcolor2_T1">'+displayname+'<br><span class="wprev_showdate_T1" id="wprev_showdate">1/12/2017</span> </span>	\
+								</div><span class="wpairbnb_t1_A_8"><img src="'+imagehref+'" alt="thumb" class="wpairbnb_t1_IMG_4 wprev_avatar_opt"></span> <span class="wpairbnb_t1_SPAN_5 wprev_preview_tcolor2_T1">'+displayname+'<br><span class="wprev_showdate_T1" id="wprev_showdate">1/12/2017</span> </span>	\
 							</div>	\
 							</div>';
 
@@ -200,7 +201,7 @@
 			var lastname = $( "#wprevpro_template_misc_lastname" ).val();
 
 			if(templatenum=='1'){
-				prestyle = "<style>.wprevpro_t1_DIV_2.wprev_preview_bg1_T1::after{ border-top: 30px solid "+bg1+"; }</style>";
+				prestyle = "<style>.wpairbnb_t1_DIV_2::after,.wprev_preview_bg1_T1::after{ border-top: 30px solid "+bg1+"; }</style>";
 			} else {
 				prestyle = "";
 			}
@@ -527,27 +528,35 @@
 			}
 		}
 
-		//------------Template settings tabs (Style / General / Filter / Badge)------------
+		//------------Template settings tabs (Style / General / Filter / Badge / AI)------------
 		var currenttab = 0;
+		function hideAllSettingTables(){
+			$( "#settingtable0, #settingtable1, #settingtable2, #settingtable3, #settingtable4" ).hide();
+		}
 		$( ".gotopage0" ).click(function() {
+			hideAllSettingTables();
 			$( "#settingtable0" ).fadeIn();
-			$( "#settingtable1, #settingtable2, #settingtable3" ).hide();
 			currenttab = 0; changecurrenttab(currenttab);
 		});
 		$( ".gotopage1" ).click(function() {
+			hideAllSettingTables();
 			$( "#settingtable1" ).fadeIn();
-			$( "#settingtable0, #settingtable2, #settingtable3" ).hide();
 			currenttab = 1; changecurrenttab(currenttab);
 		});
 		$( ".gotopage2" ).click(function() {
+			hideAllSettingTables();
 			$( "#settingtable2" ).fadeIn();
-			$( "#settingtable0, #settingtable1, #settingtable3" ).hide();
 			currenttab = 2; changecurrenttab(currenttab);
 		});
 		$( ".gotopage3" ).click(function() {
+			hideAllSettingTables();
 			$( "#settingtable3" ).fadeIn();
-			$( "#settingtable0, #settingtable1, #settingtable2" ).hide();
 			currenttab = 3; changecurrenttab(currenttab);
+		});
+		$( ".gotopage4" ).click(function() {
+			hideAllSettingTables();
+			$( "#settingtable4" ).fadeIn();
+			currenttab = 4; changecurrenttab(currenttab);
 		});
 		function changecurrenttab(ctab){
 			$( ".settingtab" ).removeClass( "nav-tab-active" );

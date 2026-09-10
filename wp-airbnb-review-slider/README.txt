@@ -4,7 +4,7 @@ Donate link: https://wpreviewslider.com/
 Tags: airbnb reviews, review slider, vacation rental reviews, testimonial slider, social proof
 Requires at least: 4.0.1
 Tested up to: 7.0
-Stable tag: 4.8
+Stable tag: 5.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,17 @@ Post on the [support forum](https://wordpress.org/support/plugin/wp-airbnb-revie
 5. Create as many templates as you like.
 
 == Changelog ==
+= 5.0 =
+* Restored Airbnb logos on the Analytics page.
+* Cleaned up Get Airbnb Reviews upgrade messaging.
+
+= 4.9 =
+* Added a new Analytics page for review insights and charts.
+* Added Pro feature highlights and upgrade nudges throughout the admin.
+* Template Filter limited to one Airbnb listing in free (multi-listing is Pro).
+* Fixed Template Style 1 live preview and PHP warnings on new templates.
+* Fixed Analytics chart and word-cloud popups not showing matching reviews.
+
 = 4.8 =
 * Small bug fixes and email opt-in.
 
@@ -211,6 +222,12 @@ Post on the [support forum](https://wordpress.org/support/plugin/wp-airbnb-revie
 * First Version
 
 == Upgrade Notice ==
+
+= 5.0 =
+* Analytics Airbnb logos and cleaner Get Reviews upgrade messaging.
+
+= 4.9 =
+* Analytics page, Pro feature highlights, Style 1 preview fix, and single-listing template filter.
 
 = 4.7 =
 * Multiple Airbnb listing sources with per-listing download and template filtering.

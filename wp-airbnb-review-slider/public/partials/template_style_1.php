@@ -39,12 +39,16 @@ for ($x = 0; $x < count($rowarray); $x++) {
 		} else {
 			$userpichtml ='<img src="'.$userpic.'" alt="thumb" class="wpairbnb_t1_IMG_4" loading="lazy" />';
 		}
+
+		$starhtml = '';
+		$logo = '';
+		$burl = 'https://www.airbnb.com';
 		
 		//star number 
 		if($review->type=="Airbnb"){
 			//find business url
 			$options = get_option('wpairbnb_airbnb_settings');
-			$burl = $options['airbnb_business_url'];
+			$burl = ( is_array( $options ) && ! empty( $options['airbnb_business_url'] ) ) ? $options['airbnb_business_url'] : '';
 			if($burl==""){
 				$burl="https://www.airbnb.com";
 			}
