@@ -70,7 +70,7 @@ class WP_Airbnb_Review {
 
 		$this->_token = 'wp-airbnb-review-slider';
 		// 5.0: Analytics logos, Get Reviews copy cleanup. 4.9: Analytics, Pro teasers, Style 1 preview, single-source Filter.
-		$this->version = '5.0';
+		$this->version = '5.1';
 		//using this for development
 		//$this->version = time();
 
@@ -306,6 +306,7 @@ class WP_Airbnb_Review {
 
 		// First-visit Brevo email opt-in redirect
 		$this->loader->add_action( 'admin_init', $plugin_admin, 'wpairbnb_maybe_redirect_optin' );
+		$this->loader->add_action( 'admin_head', $plugin_admin, 'wpairbnb_hide_optin_menu' );
 
 		//add menu page
 		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_menu_pages' );

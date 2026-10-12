@@ -15,7 +15,7 @@
  * Plugin Name: 	  WP Airbnb Review Slider
  * Plugin URI:        https://wpreviewslider.com/
  * Description:       Display Airbnb reviews in a slider or grid. Download reviews to your database for fast local loading on any post, page, or widget.
- * Version:           5.0
+ * Version:           5.1
  * Author:            LJ Apps
  * Author URI:        http://ljapps.com/
  * License:           GPL-2.0+
@@ -37,6 +37,9 @@ function activate_WP_Airbnb_Review( $networkwide )
 	//save time activated
 	$newtime=time();
 	update_option( 'wprev_activated_time_airbnb', $newtime );
+	if ( empty( $networkwide ) ) {
+		set_transient( 'wpairbnb_activation_redirect', '1', MINUTE_IN_SECONDS );
+	}
     require_once plugin_dir_path( __FILE__ ) . 'includes/class-wp-airbnb-review-slider-activator.php';
     WP_Airbnb_Review_Activator::activate_all( $networkwide );
 }
@@ -94,6 +97,10 @@ function wpairbnb_do_this_daily() {
 add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wprevair_action_links' );
 function wprevair_action_links( $links )
 {
+    $optin = get_option( 'wp_airbnb_optin', '' );
+    $label = ( 'yes' === $optin ) ? __( 'Opt Out', 'wp-airbnb-review-slider' ) : __( 'Opt In', 'wp-airbnb-review-slider' );
+    $optin_link = '<a href="' . esc_url( admin_url( 'admin.php?page=wp_airbnb-opt' ) ) . '">' . esc_html( $label ) . '</a>';
+    array_splice( $links, 1, 0, $optin_link );
     $links[] = '<a href="https://wpreviewslider.com/" target="_blank"><strong style="color: #009040; display: inline;">Go Pro!</strong></a>';
     return $links;
 }
